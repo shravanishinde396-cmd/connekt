@@ -1,0 +1,469 @@
+import { Response, NextFunction } from 'express';
+import { Company } from '../models/Company.js';
+import { Drive } from '../models/Drive.js';
+import { User } from '../models/User.js';
+import { StudentProfile } from '../models/StudentProfile.js';
+import { AuthenticatedRequest } from '../middlewares/auth.js';
+
+// ==========================================
+// COMPANY CRUD
+// ==========================================
+
+export const getCompanies = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const companies = await Company.find().sort({ name: 1 });
+    res.json(companies);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCompanyById = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const company = await Company.findById(req.params.companyId);
+    if (!company) {
+      res.status(404).json({ error: 'Company not found' });
+      return;
+    }
+    res.json(company);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createCompany = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { name, website, industry, description, logoUrl } = req.body;
+
+    const existing = await Company.findOne({ name });
+    if (existing) {
+      res.status(400).json({ error: 'A company with this name already exists' });
+      return;
+    }
+
+    const company = new Company({ name, website, industry, description, logoUrl });
+    await company.save();
+
+    res.status(201).json({ message: 'Company created successfully', company });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateCompany = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const company = await Company.findByIdAndUpdate(req.params.companyId, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    if (!company) {
+      res.status(404).json({ error: 'Company not found' });
+      return;
+    }
+    res.json({ message: 'Company updated successfully', company });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteCompany = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const hasDrives = await Drive.exists({ companyId: req.params.companyId });
+    if (hasDrives) {
+      res.status(400).json({ error: 'Cannot delete company with active or historical placement drives' });
+      return;
+    }
+
+    const company = await Company.findByIdAndDelete(req.params.companyId);
+    if (!company) {
+      res.status(404).json({ error: 'Company not found' });
+      return;
+    }
+    res.json({ message: 'Company deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==========================================
+// PLACEMENT DRIVE CRUD
+// ==========================================
+
+export const getOfficerDrives = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const drives = await Drive.find().populate('companyId').sort({ createdAt: -1 });
+    res.json(drives);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getOfficerDriveById = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const drive = await Drive.findById(req.params.driveId).populate('companyId');
+    if (!drive) {
+      res.status(404).json({ error: 'Placement drive not found' });
+      return;
+    }
+    res.json(drive);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createOfficerDrive = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const {
+      companyId,
+      role,
+      packageLPA,
+      cgpaCutoff,
+      backlogCutoff,
+      allowedDepartments,
+      jobDescription,
+      deadline,
+      status,
+    } = req.body;
+
+    const company = await Company.findById(companyId);
+    if (!company) {
+      res.status(404).json({ error: 'Selected company does not exist' });
+      return;
+    }
+
+    const drive = new Drive({
+      companyId,
+      role,
+      packageLPA,
+      cgpaCutoff,
+      backlogCutoff,
+      allowedDepartments,
+      jobDescription,
+      deadline: new Date(deadline),
+      status: status || 'Active',
+      applicants: [],
+    });
+    await drive.save();
+
+    res.status(201).json({ message: 'Placement drive created successfully', drive });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateOfficerDrive = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const payload = { ...req.body };
+    if (payload.deadline) {
+      payload.deadline = new Date(payload.deadline);
+    }
+
+    const drive = await Drive.findByIdAndUpdate(req.params.driveId, payload, {
+      new: true,
+      runValidators: true,
+    }).populate('companyId');
+
+    if (!drive) {
+      res.status(404).json({ error: 'Placement drive not found' });
+      return;
+    }
+    res.json({ message: 'Drive updated successfully', drive });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteOfficerDrive = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const drive = await Drive.findByIdAndDelete(req.params.driveId);
+    if (!drive) {
+      res.status(404).json({ error: 'Placement drive not found' });
+      return;
+    }
+    res.json({ message: 'Placement drive deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==========================================
+// APPLICANT & PIPELINE ACTIONS
+// ==========================================
+
+export const getDriveApplicants = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const drive = await Drive.findById(req.params.driveId).populate('applicants.studentId', 'name email');
+    if (!drive) {
+      res.status(404).json({ error: 'Placement drive not found' });
+      return;
+    }
+
+    // Populate student profiles manually to get academic details
+    const studentUserIds = drive.applicants.map((a) => a.studentId._id || a.studentId);
+    const profiles = await StudentProfile.find({ userId: { $in: studentUserIds } });
+
+    const enrichedApplicants = drive.applicants.map((applicant: any) => {
+      const studentUser = applicant.studentId;
+      const studentProfile = profiles.find(
+        (p) => p.userId.toString() === (studentUser?._id || studentUser).toString()
+      );
+
+      return {
+        _id: applicant._id,
+        appliedAt: applicant.appliedAt,
+        status: applicant.status,
+        resumeUrl: applicant.resumeUrl,
+        feedback: applicant.feedback,
+        student: {
+          _id: studentUser?._id || studentUser,
+          name: studentUser?.name || 'Anonymous Student',
+          email: studentUser?.email || 'N/A',
+          department: studentProfile?.department || 'TBD',
+          CGPA: studentProfile?.CGPA || 0,
+          backlogs: studentProfile?.backlogs || 0,
+          skills: studentProfile?.skills || [],
+        },
+      };
+    });
+
+    res.json(enrichedApplicants);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateApplicantStatus = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { driveId, applicantId } = req.params;
+    const { status, feedback } = req.body;
+
+    const drive = await Drive.findById(driveId);
+    if (!drive) {
+      res.status(404).json({ error: 'Placement drive not found' });
+      return;
+    }
+
+    const applicant = (drive.applicants as any).id(applicantId);
+    if (!applicant) {
+      res.status(404).json({ error: 'Applicant record not found' });
+      return;
+    }
+
+    if (status) applicant.status = status;
+    if (feedback !== undefined) applicant.feedback = feedback;
+
+    await drive.save();
+
+    res.json({ message: 'Applicant status updated successfully', applicant });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==========================================
+// ANALYTICS & AGGREGATIONS
+// ==========================================
+
+export const getOfficerAnalytics = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    // 1. Total Students
+    const totalStudents = await User.countDocuments({ role: 'student' });
+
+    // 2. Placed Students (anyone with 'Selected' status in at least one drive)
+    const placedStudentIds = await Drive.distinct('applicants.studentId', {
+      'applicants.status': 'Selected',
+    });
+    const placedStudents = placedStudentIds.length;
+
+    // 3. Placement Percentage
+    const placementRate = totalStudents > 0 ? Math.round((placedStudents / totalStudents) * 100) : 0;
+
+    // 4. General Counts
+    const totalCompanies = await Company.countDocuments();
+    const totalActiveDrives = await Drive.countDocuments({ status: 'Active' });
+
+    // 5. Department wise placement rates
+    // Get all student profiles
+    const profiles = await StudentProfile.find();
+    const departments = ['Computer Science', 'Information Technology', 'Electronics & Communication', 'Mechanical Engineering', 'Electrical Engineering'];
+    
+    const departmentBreakdown = departments.map((dept) => {
+      const deptStudents = profiles.filter((p) => p.department === dept);
+      const totalDept = deptStudents.length;
+      
+      const placedDept = deptStudents.filter((p) =>
+        placedStudentIds.some((id) => id.toString() === p.userId.toString())
+      ).length;
+
+      return {
+        department: dept,
+        total: totalDept,
+        placed: placedDept,
+        rate: totalDept > 0 ? Math.round((placedDept / totalDept) * 100) : 0,
+      };
+    });
+
+    res.json({
+      summary: {
+        totalStudents,
+        placedStudents,
+        placementRate,
+        totalCompanies,
+        totalActiveDrives,
+      },
+      departmentBreakdown,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getSalaryStats = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const drives = await Drive.find().populate('companyId', 'name');
+    
+    if (drives.length === 0) {
+      res.json({
+        averageCTC: 0,
+        maxCTC: 0,
+        minCTC: 0,
+        distribution: [],
+      });
+      return;
+    }
+
+    const packages = drives.map((d) => d.packageLPA);
+    const maxCTC = Math.max(...packages);
+    const minCTC = Math.min(...packages);
+    const averageCTC = parseFloat(
+      (packages.reduce((sum, val) => sum + val, 0) / packages.length).toFixed(2)
+    );
+
+    const distribution = drives.map((d) => ({
+      label: `${(d.companyId as any)?.name || 'Unknown'} - ${d.role}`,
+      package: d.packageLPA,
+      applicants: d.applicants?.length || 0,
+    }));
+
+    res.json({
+      averageCTC,
+      maxCTC,
+      minCTC,
+      distribution,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const exportPlacedStudentsCSV = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const drives = await Drive.find({ 'applicants.status': 'Selected' })
+      .populate('companyId', 'name')
+      .populate('applicants.studentId', 'name email');
+
+    const placedRows: any[] = [];
+    const studentUserIds: any[] = [];
+
+    drives.forEach((drive) => {
+       drive.applicants.forEach((app) => {
+         if (app.status === 'Selected') {
+           const studentInfo = app.studentId as any;
+           const companyInfo = drive.companyId as any;
+
+           studentUserIds.push(studentInfo?._id || app.studentId);
+           placedRows.push({
+             studentId: studentInfo?._id || app.studentId,
+             studentName: studentInfo?.name || 'Anonymous Student',
+             studentEmail: studentInfo?.email || 'N/A',
+             companyName: companyInfo?.name || 'N/A',
+             role: drive.role,
+             package: drive.packageLPA,
+           });
+         }
+       });
+     });
+
+    const profiles = await StudentProfile.find({ userId: { $in: studentUserIds } });
+
+    let csv = 'Candidate Name,Email,Academic Department,CGPA,Hired Employer,Job Role,CTC Package (LPA)\n';
+    
+    placedRows.forEach((row) => {
+      const profile = profiles.find((p) => p.userId.toString() === row.studentId.toString());
+      const department = profile?.department || 'TBD';
+      const cgpa = profile?.CGPA || 'N/A';
+
+      const cleanName = row.studentName.replace(/,/g, '');
+      const cleanCompany = row.companyName.replace(/,/g, '');
+      const cleanRole = row.role.replace(/,/g, '');
+
+      csv += `"${cleanName}","${row.studentEmail}","${department}","${cgpa}","${cleanCompany}","${cleanRole}",${row.package}\n`;
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=placepilot_placed_candidates.csv');
+    res.status(200).send(csv);
+  } catch (error) {
+    next(error);
+  }
+};
