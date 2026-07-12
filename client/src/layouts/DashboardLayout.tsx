@@ -106,10 +106,10 @@ export const DashboardLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex font-sans">
+    <div className="min-h-screen bg-background text-foreground flex font-sans transition-colors duration-250">
       {/* Sidebar Navigation */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-30 w-64 bg-zinc-900 border-r border-zinc-800 transition-transform duration-300 transform md:translate-x-0 ${
+        className={`fixed top-0 bottom-0 left-0 z-30 w-64 bg-card border-r border-border transition-transform duration-300 transform md:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -121,23 +121,23 @@ export const DashboardLayout: React.FC = () => {
                 <div className="w-8 h-8 bg-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-base shadow-lg shadow-purple-600/30">
                   P
                 </div>
-                <span className="font-semibold text-base tracking-tight bg-gradient-to-r from-zinc-100 to-zinc-300 bg-clip-text text-transparent">
+                <span className="font-semibold text-base tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                   PlacePilot
                 </span>
               </Link>
-              <button onClick={() => setSidebarOpen(false)} className="md:hidden text-zinc-400 hover:text-zinc-100">
+              <button onClick={() => setSidebarOpen(false)} className="md:hidden text-muted-foreground hover:text-foreground">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* User identification badge */}
-            <div className="bg-zinc-950/50 border border-zinc-850 p-3 rounded-xl mb-6 flex items-center gap-3">
+            <div className="bg-background/50 border border-border p-3 rounded-xl mb-6 flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400 font-bold uppercase">
                 {user.name.charAt(0)}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-zinc-100 truncate">{user.name}</p>
-                <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider">
+                <p className="text-xs font-semibold text-foreground truncate">{user.name}</p>
+                <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
                   {user.role.replace('_', ' ')}
                 </p>
               </div>
@@ -153,8 +153,8 @@ export const DashboardLayout: React.FC = () => {
                     to={item.path}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                       isActive
-                        ? 'bg-purple-600 text-zinc-100 shadow-lg shadow-purple-600/10'
-                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850'
+                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/10'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                     }`}
                   >
                     {item.icon}
@@ -168,7 +168,7 @@ export const DashboardLayout: React.FC = () => {
           {/* Logout button */}
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-950/15 border border-transparent hover:border-red-900/30 transition-all focus:outline-none"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-950/15 border border-transparent hover:border-red-900/30 transition-all focus:outline-none cursor-pointer"
           >
             <LogOut className="w-5 h-5" />
             Sign Out
@@ -179,22 +179,22 @@ export const DashboardLayout: React.FC = () => {
       {/* Main Workspace content */}
       <div className="flex-grow flex flex-col md:pl-64 min-w-0">
         {/* Top Navbar */}
-        <header className="sticky top-0 z-20 h-16 bg-zinc-950/75 border-b border-zinc-900/60 backdrop-blur-md px-6 flex items-center justify-between">
+        <header className="sticky top-0 z-20 h-16 bg-background/75 border-b border-border/60 backdrop-blur-md px-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 bg-zinc-900/60 border border-zinc-800 rounded-xl text-zinc-400 hover:text-zinc-100 transition-colors focus:outline-none md:hidden"
+              className="p-2 bg-card/60 border border-border rounded-xl text-muted-foreground hover:text-foreground transition-colors focus:outline-none md:hidden"
             >
               <Menu className="w-5 h-5" />
             </button>
             
             {/* Breadcrumb info */}
-            <div className="hidden sm:flex items-center gap-1.5 text-xs text-zinc-500 font-medium font-mono">
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground font-medium font-mono">
               <span>PlacePilot</span>
               <span>/</span>
               <span className="capitalize">{user.role.replace('_', ' ')}</span>
               <span>/</span>
-              <span className="text-zinc-300 capitalize">{location.pathname.split('/').pop() || 'Overview'}</span>
+              <span className="text-foreground capitalize">{location.pathname.split('/').pop() || 'Overview'}</span>
             </div>
           </div>
 
@@ -202,7 +202,7 @@ export const DashboardLayout: React.FC = () => {
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2.5 bg-zinc-900/60 border border-zinc-800 rounded-xl text-zinc-400 hover:text-zinc-100 transition-colors focus:outline-none"
+              className="p-2.5 bg-card/60 border border-border rounded-xl text-muted-foreground hover:text-foreground transition-colors focus:outline-none cursor-pointer"
             >
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
@@ -214,7 +214,7 @@ export const DashboardLayout: React.FC = () => {
                   setNotificationsOpen(!notificationsOpen);
                   setProfileDropdownOpen(false);
                 }}
-                className="p-2.5 bg-zinc-900/60 border border-zinc-800 rounded-xl text-zinc-400 hover:text-zinc-100 transition-colors focus:outline-none relative"
+                className="p-2.5 bg-card/60 border border-border rounded-xl text-muted-foreground hover:text-foreground transition-colors focus:outline-none relative cursor-pointer"
               >
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
@@ -223,20 +223,20 @@ export const DashboardLayout: React.FC = () => {
               </button>
 
               {notificationsOpen && (
-                <div className="absolute right-0 top-12 z-40 w-80 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden p-2 animate-in fade-in slide-in-from-top-2">
-                  <div className="flex justify-between items-center p-3 border-b border-zinc-850">
-                    <span className="text-xs font-semibold text-zinc-300">Notifications</span>
+                <div className="absolute right-0 top-12 z-40 w-80 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden p-2 animate-in fade-in slide-in-from-top-2">
+                  <div className="flex justify-between items-center p-3 border-b border-border/40">
+                    <span className="text-xs font-semibold text-foreground">Notifications</span>
                     {unreadCount > 0 && (
-                      <button onClick={markAllAsRead} className="text-[10px] text-purple-400 hover:underline">
+                      <button onClick={markAllAsRead} className="text-[10px] text-purple-400 hover:underline cursor-pointer">
                         Mark all read
                       </button>
                     )}
                   </div>
-                  <div className="max-h-60 overflow-y-auto divide-y divide-zinc-850">
+                  <div className="max-h-60 overflow-y-auto divide-y divide-border/40">
                     {notifications.map((n) => (
-                      <div key={n.id} className={`p-3 text-left ${n.isRead ? 'opacity-65' : 'bg-purple-950/5'}`}>
-                        <p className="text-xs font-semibold text-zinc-200">{n.title}</p>
-                        <p className="text-[10px] text-zinc-400 mt-1">{n.message}</p>
+                      <div key={n.id} className={`p-3 text-left ${n.isRead ? 'opacity-65' : 'bg-purple-955/5'}`}>
+                        <p className="text-xs font-semibold text-foreground">{n.title}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">{n.message}</p>
                       </div>
                     ))}
                   </div>
@@ -251,23 +251,23 @@ export const DashboardLayout: React.FC = () => {
                   setProfileDropdownOpen(!profileDropdownOpen);
                   setNotificationsOpen(false);
                 }}
-                className="flex items-center gap-1.5 p-1 bg-zinc-900/60 border border-zinc-850 rounded-xl hover:border-zinc-800 transition-all focus:outline-none"
+                className="flex items-center gap-1.5 p-1 bg-card/60 border border-border rounded-xl hover:border-border/80 transition-all focus:outline-none cursor-pointer"
               >
                 <div className="w-7 h-7 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-xs uppercase">
                   {user.name.charAt(0)}
                 </div>
-                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 mr-1" />
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground mr-1" />
               </button>
 
               {profileDropdownOpen && (
-                <div className="absolute right-0 top-10 z-40 w-48 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-2 animate-in fade-in slide-in-from-top-2">
-                  <div className="px-3 py-2 border-b border-zinc-850">
-                    <p className="text-xs font-semibold text-zinc-200 truncate">{user.name}</p>
-                    <p className="text-[10px] text-zinc-500 truncate">{user.email}</p>
+                <div className="absolute right-0 top-10 z-40 w-48 bg-card border border-border rounded-2xl shadow-2xl p-2 animate-in fade-in slide-in-from-top-2">
+                  <div className="px-3 py-2 border-b border-border/40">
+                    <p className="text-xs font-semibold text-foreground truncate">{user.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{user.email}</p>
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs text-red-400 hover:bg-red-950/15 hover:text-red-300 transition-colors mt-1 focus:outline-none"
+                    className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs text-red-400 hover:bg-red-950/15 hover:text-red-300 transition-colors mt-1 focus:outline-none cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
                     Sign Out

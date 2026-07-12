@@ -5,6 +5,7 @@ import {
   uploadResume,
   getStudentDrives,
   applyToStudentDrive,
+  analyzeResume,
 } from '../controllers/student.js';
 import { authenticateJWT, requireRole } from '../middlewares/auth.js';
 import { validate } from '../middlewares/validate.js';
@@ -20,6 +21,7 @@ router.use(requireRole(['student']) as any);
 router.get('/profile', getStudentProfile as any);
 router.put('/profile', validate(updateStudentProfileSchema), updateStudentProfile as any);
 router.post('/resume', upload.single('resume'), uploadResume as any);
+router.post('/profile/analyze-resume', analyzeResume as any);
 router.get('/drives', getStudentDrives as any);
 router.post('/drives/:driveId/apply', applyToStudentDrive as any);
 

@@ -334,24 +334,43 @@ export const getOfficerAnalytics = async (
     const totalCompanies = await Company.countDocuments();
     const totalActiveDrives = await Drive.countDocuments({ status: 'Active' });
 
-    // 5. Department wise placement rates
-    // Get all student profiles
-    const profiles = await StudentProfile.find();
-    const departments = ['Computer Science', 'Information Technology', 'Electronics & Communication', 'Mechanical Engineering', 'Electrical Engineering'];
+    // 5. Department wise placement rates calculated in MongoDB
+    const aggregatedDepts = await StudentProfile.aggregate([
+      {
+        $group: {
+          _id: '$department',
+          total: { $sum: 1 },
+          placed: {
+            $sum: {
+              $cond: [
+                { $in: ['$userId', placedStudentIds] },
+                1,
+                0
+              ]
+            }
+          }
+        }
+      }
+    ]);
+
+    const departments = [
+      'Computer Science',
+      'Information Technology',
+      'Electronics & Communication',
+      'Mechanical Engineering',
+      'Electrical Engineering'
+    ];
     
     const departmentBreakdown = departments.map((dept) => {
-      const deptStudents = profiles.filter((p) => p.department === dept);
-      const totalDept = deptStudents.length;
-      
-      const placedDept = deptStudents.filter((p) =>
-        placedStudentIds.some((id) => id.toString() === p.userId.toString())
-      ).length;
+      const agg = aggregatedDepts.find((a) => a._id === dept);
+      const total = agg ? agg.total : 0;
+      const placed = agg ? agg.placed : 0;
 
       return {
         department: dept,
-        total: totalDept,
-        placed: placedDept,
-        rate: totalDept > 0 ? Math.round((placedDept / totalDept) * 100) : 0,
+        total,
+        placed,
+        rate: total > 0 ? Math.round((placed / total) * 100) : 0,
       };
     });
 
@@ -376,9 +395,8 @@ export const getSalaryStats = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const drives = await Drive.find().populate('companyId', 'name');
-    
-    if (drives.length === 0) {
+    const drivesCount = await Drive.countDocuments();
+    if (drivesCount === 0) {
       res.json({
         averageCTC: 0,
         maxCTC: 0,
@@ -388,18 +406,56 @@ export const getSalaryStats = async (
       return;
     }
 
-    const packages = drives.map((d) => d.packageLPA);
-    const maxCTC = Math.max(...packages);
-    const minCTC = Math.min(...packages);
-    const averageCTC = parseFloat(
-      (packages.reduce((sum, val) => sum + val, 0) / packages.length).toFixed(2)
-    );
+    // 1. Calculate min, max, average CTC packages using MongoDB aggregation
+    const statsAgg = await Drive.aggregate([
+      {
+        $group: {
+          _id: null,
+          maxCTC: { $max: '$packageLPA' },
+          minCTC: { $min: '$packageLPA' },
+          averageCTC: { $avg: '$packageLPA' },
+        }
+      }
+    ]);
 
-    const distribution = drives.map((d) => ({
-      label: `${(d.companyId as any)?.name || 'Unknown'} - ${d.role}`,
-      package: d.packageLPA,
-      applicants: d.applicants?.length || 0,
-    }));
+    const stats = statsAgg[0] || { maxCTC: 0, minCTC: 0, averageCTC: 0 };
+    const maxCTC = stats.maxCTC;
+    const minCTC = stats.minCTC;
+    const averageCTC = parseFloat(stats.averageCTC.toFixed(2));
+
+    // 2. Compute distribution details with company join
+    const distribution = await Drive.aggregate([
+      {
+        $lookup: {
+          from: 'companies',
+          localField: 'companyId',
+          foreignField: '_id',
+          as: 'company'
+        }
+      },
+      {
+        $unwind: {
+          path: '$company',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          label: {
+            $concat: [
+              { $ifNull: ['$company.name', 'Unknown'] },
+              ' - ',
+              '$role'
+            ]
+          },
+          package: '$packageLPA',
+          applicants: { $size: { $ifNull: ['$applicants', []] } }
+        }
+      },
+      {
+        $sort: { package: -1 }
+      }
+    ]);
 
     res.json({
       averageCTC,

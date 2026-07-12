@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api.js';
 import { useToast } from '../../contexts/ToastContext.js';
-import { StatCard } from '../../components/StatCard.js';
+import { Card, CardContent } from '../../components/ui/Card.js';
+import { Modal } from '../../components/ui/Modal.js';
+import { Button } from '../../components/ui/Button.js';
+import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '../../components/ui/Table.js';
+import { Badge } from '../../components/ui/Badge.js';
+import { Skeleton } from '../../components/ui/Skeleton.js';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/Tabs.js';
+import { NumberCounter } from '../../components/framer/NumberCounter.js';
 import {
   Users,
   ShieldAlert,
@@ -41,7 +48,7 @@ interface AuditLog {
 
 export const AdminDashboard: React.FC = () => {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'users' | 'audit' | 'settings'>('users');
+  const [activeTab, setActiveTab] = useState('users');
   const [loading, setLoading] = useState(true);
 
   // Data States
@@ -92,8 +99,7 @@ export const AdminDashboard: React.FC = () => {
     setRoleModalOpen(true);
   };
 
-  const handleUpdateRole = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdateRole = async () => {
     if (!selectedUser) return;
 
     setUpdating(true);
@@ -137,12 +143,15 @@ export const AdminDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-8 animate-pulse">
-        <div className="h-12 bg-zinc-900 rounded-2xl w-64"></div>
+      <div className="flex flex-col gap-8">
+        <Skeleton className="h-12 w-64 rounded-xl" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="h-28 bg-zinc-900 rounded-3xl"></div>
+          <Skeleton className="h-28 w-full rounded-2xl" />
+          <Skeleton className="h-28 w-full rounded-2xl" />
+          <Skeleton className="h-28 w-full rounded-2xl" />
+          <Skeleton className="h-28 w-full rounded-2xl" />
         </div>
-        <div className="h-96 bg-zinc-900 rounded-3xl"></div>
+        <Skeleton className="h-96 w-full rounded-3xl" />
       </div>
     );
   }
@@ -150,78 +159,104 @@ export const AdminDashboard: React.FC = () => {
   return (
     <div className="flex flex-col gap-8">
       {/* Title */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-border/40 pb-6">
         <div>
           <h1 className="text-3xl font-extrabold text-zinc-100 tracking-tight">System Control Panel</h1>
           <p className="text-sm text-zinc-400 mt-1">Review user accounts, check audit logging logs, and adjust security rules.</p>
         </div>
 
         {/* Tab switch */}
-        <div className="flex bg-zinc-900 border border-zinc-800 p-1 rounded-xl">
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'users'
-                ? 'bg-purple-600 text-zinc-100'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <Users className="w-4 h-4" /> Accounts
-          </button>
-          <button
-            onClick={() => setActiveTab('audit')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'audit'
-                ? 'bg-purple-600 text-zinc-100'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <ShieldAlert className="w-4 h-4" /> Audit Trails
-          </button>
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'settings'
-                ? 'bg-purple-600 text-zinc-100'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <Settings className="w-4 h-4" /> Settings
-          </button>
-        </div>
+        <Tabs defaultValue={activeTab} onValueChange={(val) => setActiveTab(val)}>
+          <TabsList>
+            <TabsTrigger value="users">
+              <Users className="w-4 h-4 mr-1" /> Accounts
+            </TabsTrigger>
+            <TabsTrigger value="audit">
+              <ShieldAlert className="w-4 h-4 mr-1" /> Audit Trails
+            </TabsTrigger>
+            <TabsTrigger value="settings">
+              <Settings className="w-4 h-4 mr-1" /> Settings
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatCard
-          title="Total Users"
-          value={users.length}
-          icon={<Users className="w-5 h-5 text-purple-400" />}
-          description="Registered system accounts"
-        />
-        <StatCard
-          title="Security Logs"
-          value={logs.length}
-          icon={<History className="w-5 h-5 text-blue-400" />}
-          description="Modifications logged in DB"
-        />
-        <StatCard
-          title="Admins & Officers"
-          value={users.filter((u) => u.role === 'admin' || u.role === 'placement_officer').length}
-          icon={<ShieldCheck className="w-5 h-5 text-emerald-400" />}
-          description="Privileged core users"
-        />
-        <StatCard
-          title="Active Integrations"
-          value="Healthy"
-          icon={<Settings className="w-5 h-5 text-amber-400" />}
-          description="Global configuration healthy"
-        />
+        <Card>
+          <CardContent className="pt-6 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <div className="flex justify-between items-start">
+              <span className="text-sm font-semibold text-zinc-400">Total Users</span>
+              <div className="p-2 bg-zinc-900 border border-zinc-850 rounded-xl text-purple-400 group-hover:text-purple-300 transition-colors">
+                <Users className="w-4.5 h-4.5" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <span className="text-3xl font-extrabold text-zinc-100 tracking-tight font-mono">
+                <NumberCounter value={users.length} />
+              </span>
+            </div>
+            <p className="mt-2 text-[11px] text-zinc-500">Registered system accounts</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <div className="flex justify-between items-start">
+              <span className="text-sm font-semibold text-zinc-400">Security Logs</span>
+              <div className="p-2 bg-zinc-900 border border-zinc-850 rounded-xl text-blue-400 group-hover:text-blue-300 transition-colors">
+                <History className="w-4.5 h-4.5" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <span className="text-3xl font-extrabold text-zinc-100 tracking-tight font-mono">
+                <NumberCounter value={logs.length} />
+              </span>
+            </div>
+            <p className="mt-2 text-[11px] text-zinc-500">Modifications logged in DB</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <div className="flex justify-between items-start">
+              <span className="text-sm font-semibold text-zinc-400">Admins & Officers</span>
+              <div className="p-2 bg-zinc-900 border border-zinc-850 rounded-xl text-emerald-400 group-hover:text-emerald-300 transition-colors">
+                <ShieldCheck className="w-4.5 h-4.5" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <span className="text-3xl font-extrabold text-zinc-100 tracking-tight font-mono">
+                <NumberCounter value={users.filter((u) => u.role === 'admin' || u.role === 'placement_officer').length} />
+              </span>
+            </div>
+            <p className="mt-2 text-[11px] text-zinc-500">Privileged core users</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <div className="flex justify-between items-start">
+              <span className="text-sm font-semibold text-zinc-400">Active Integrations</span>
+              <div className="p-2 bg-zinc-900 border border-zinc-850 rounded-xl text-amber-400 group-hover:text-amber-300 transition-colors">
+                <Settings className="w-4.5 h-4.5" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <span className="text-3xl font-extrabold text-zinc-100 tracking-tight">Healthy</span>
+            </div>
+            <p className="mt-2 text-[11px] text-zinc-500">Global configuration healthy</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Tab: Accounts */}
-      {activeTab === 'users' && (
-        <div className="space-y-6">
+      <Tabs defaultValue={activeTab} value={activeTab} onValueChange={(val) => setActiveTab(val)} className="w-full">
+        {/* Tab: Accounts */}
+        <TabsContent value="users" className="space-y-6 animate-in fade-in duration-200">
           <div className="relative w-full max-w-xs">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
             <input
@@ -229,72 +264,70 @@ export const AdminDashboard: React.FC = () => {
               placeholder="Search users by name or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm bg-zinc-900 border border-zinc-800 rounded-xl focus:outline-none focus:border-purple-500 text-zinc-100 placeholder-zinc-500"
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:border-purple-500 text-zinc-100 placeholder-zinc-500"
             />
           </div>
 
-          <div className="bg-zinc-900/35 border border-zinc-850 rounded-3xl overflow-hidden backdrop-blur-md">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left text-sm text-zinc-300">
-                <thead className="bg-zinc-950/40 text-xs font-bold text-zinc-400 uppercase tracking-wider border-b border-zinc-850">
-                  <tr>
-                    <th className="px-6 py-4">User Details</th>
-                    <th className="px-6 py-4">Current Role</th>
-                    <th className="px-6 py-4">Organization Mapping</th>
-                    <th className="px-6 py-4">Registration Date</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-850">
-                  {filteredUsers.map((u) => (
-                    <tr key={u._id} className="hover:bg-zinc-900/10 transition-colors">
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="font-bold text-zinc-100">{u.name}</p>
-                          <p className="text-[10px] text-zinc-500 font-mono mt-0.5">{u.email}</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${
-                            u.role === 'admin'
-                              ? 'bg-purple-500/10 border border-purple-500/20 text-purple-400'
-                              : u.role === 'placement_officer'
-                              ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
-                              : u.role === 'recruiter'
-                              ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
-                              : 'bg-zinc-950 border border-zinc-850 text-zinc-500'
-                          }`}
-                        >
-                          {u.role.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-xs font-mono text-zinc-400">
-                        {u.companyId ? u.companyId.name : 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 text-xs text-zinc-500">
-                        {new Date(u.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => openRoleModal(u)}
-                          className="flex items-center gap-1 ml-auto px-2.5 py-1.5 bg-zinc-950 border border-zinc-805 hover:bg-zinc-900 text-zinc-400 hover:text-purple-400 rounded-xl transition-all text-xs font-semibold"
-                        >
-                          <UserCog className="w-3.5 h-3.5" /> Adjust Role
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="bg-zinc-900/10 border border-zinc-800/80 rounded-3xl overflow-hidden backdrop-blur-md">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User Details</TableHead>
+                  <TableHead>Current Role</TableHead>
+                  <TableHead>Organization Mapping</TableHead>
+                  <TableHead>Registration Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredUsers.map((u) => (
+                  <TableRow key={u._id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-bold text-zinc-100">{u.name}</p>
+                        <p className="text-[10px] text-zinc-500 font-mono mt-0.5">{u.email}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          u.role === 'admin'
+                            ? 'destructive'
+                            : u.role === 'placement_officer'
+                            ? 'info'
+                            : u.role === 'recruiter'
+                            ? 'warning'
+                            : 'outline'
+                        }
+                      >
+                        {u.role.replace('_', ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs font-mono text-zinc-400">
+                      {u.companyId ? u.companyId.name : 'N/A'}
+                    </TableCell>
+                    <TableCell className="text-xs text-zinc-500 font-medium">
+                      {new Date(u.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        onClick={() => openRoleModal(u)}
+                        variant="outline"
+                        size="sm"
+                        className="ml-auto"
+                      >
+                        <UserCog className="w-3.5 h-3.5 mr-1" /> Adjust Role
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
-        </div>
-      )}
+        </TabsContent>
 
-      {/* Tab: Audit Trails */}
-      {activeTab === 'audit' && (
-        <div className="bg-zinc-900/35 border border-zinc-850 rounded-3xl p-6 md:p-8 backdrop-blur-md space-y-6">
+        {/* Tab: Audit Trails */}
+        <TabsContent value="audit" className="bg-zinc-900/10 border border-zinc-805/85 rounded-3xl p-6 md:p-8 backdrop-blur-md space-y-6 animate-in fade-in duration-200">
           <div className="border-b border-zinc-850 pb-4">
             <h2 className="text-lg font-bold text-zinc-200">System Activity Stream</h2>
             <p className="text-xs text-zinc-500 mt-1">Audit security logs for privilege changes, updates, and creation workflows.</p>
@@ -309,16 +342,16 @@ export const AdminDashboard: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-extrabold text-zinc-200">{log.action}</span>
-                    <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-zinc-900 border border-zinc-850 text-zinc-500 rounded">
+                    <Badge variant="secondary">
                       {log.userRole}
-                    </span>
+                    </Badge>
                   </div>
-                  <p className="text-xs text-zinc-400 mt-1.5">{log.target}</p>
+                  <p className="text-xs text-zinc-455 text-zinc-400 mt-1.5">{log.target}</p>
                   <p className="text-[10px] text-zinc-500 mt-1 font-mono">
                     Performer: {log.userName} • IP: {log.ipAddress || 'unknown'}
                   </p>
                 </div>
-                <span className="text-[10px] text-zinc-500 shrink-0">
+                <span className="text-[10px] text-zinc-500 shrink-0 font-medium font-sans">
                   {new Date(log.createdAt).toLocaleString()}
                 </span>
               </div>
@@ -330,12 +363,10 @@ export const AdminDashboard: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
-      )}
+        </TabsContent>
 
-      {/* Tab: Settings */}
-      {activeTab === 'settings' && (
-        <div className="bg-zinc-900/35 border border-zinc-850 rounded-3xl p-6 md:p-8 max-w-2xl backdrop-blur-md space-y-6">
+        {/* Tab: Settings */}
+        <TabsContent value="settings" className="bg-zinc-900/10 border border-zinc-805/85 rounded-3xl p-6 md:p-8 max-w-2xl backdrop-blur-md space-y-6 animate-in fade-in duration-200">
           <div className="border-b border-zinc-850 pb-4">
             <h2 className="text-lg font-bold text-zinc-200">Global Configuration Parameters</h2>
             <p className="text-xs text-zinc-500 mt-1">Toggle platform registration rules and active maintenance controls.</p>
@@ -351,12 +382,12 @@ export const AdminDashboard: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setAllowRegistration(!allowRegistration)}
-                className="text-purple-400 hover:text-purple-300 transition-colors"
+                className="text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
               >
                 {allowRegistration ? (
                   <ToggleRight className="w-10 h-10" />
                 ) : (
-                  <ToggleLeft className="w-10 h-10 text-zinc-600" />
+                  <ToggleLeft className="w-10 h-10 text-zinc-650" />
                 )}
               </button>
             </div>
@@ -370,12 +401,12 @@ export const AdminDashboard: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setEmailVerification(!emailVerification)}
-                className="text-purple-400 hover:text-purple-300 transition-colors"
+                className="text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
               >
                 {emailVerification ? (
                   <ToggleRight className="w-10 h-10" />
                 ) : (
-                  <ToggleLeft className="w-10 h-10 text-zinc-600" />
+                  <ToggleLeft className="w-10 h-10 text-zinc-650" />
                 )}
               </button>
             </div>
@@ -389,101 +420,86 @@ export const AdminDashboard: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setMaintenanceMode(!maintenanceMode)}
-                className="text-purple-400 hover:text-purple-300 transition-colors"
+                className="text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
               >
                 {maintenanceMode ? (
                   <ToggleRight className="w-10 h-10" />
                 ) : (
-                  <ToggleLeft className="w-10 h-10 text-zinc-600" />
+                  <ToggleLeft className="w-10 h-10 text-zinc-650" />
                 )}
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
 
       {/* Role modification modal */}
-      {roleModalOpen && selectedUser && (
-        <div className="fixed inset-0 z-50 bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <form
-            onSubmit={handleUpdateRole}
-            className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl p-6 md:p-8 animate-in fade-in zoom-in-95 duration-200"
-          >
-            <div className="flex justify-between items-center mb-6 border-b border-zinc-850 pb-4">
-              <h2 className="text-base font-extrabold text-zinc-100">Modify Privileges</h2>
-              <button
-                type="button"
-                onClick={() => setRoleModalOpen(false)}
-                className="p-1.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 transition-all text-xs"
-              >
-                ✕
-              </button>
+      <Modal
+        isOpen={roleModalOpen}
+        onClose={() => setRoleModalOpen(false)}
+        title="Modify Privileges"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setRoleModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              loading={updating}
+              onClick={handleUpdateRole}
+            >
+              Apply Changes
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4 pt-1">
+          {selectedUser && (
+            <div className="bg-zinc-950/40 p-4 rounded-2xl border border-zinc-850/60 mb-2">
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Target Account</p>
+              <p className="text-sm font-bold text-zinc-200 mt-0.5">{selectedUser.name}</p>
+              <p className="text-xs text-zinc-500 mt-0.5">{selectedUser.email}</p>
             </div>
+          )}
 
-            <div className="space-y-4">
-              <div className="bg-zinc-950/40 p-3 rounded-2xl border border-zinc-850/60 mb-2">
-                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Target Account</p>
-                <p className="text-sm font-bold text-zinc-200 mt-0.5">{selectedUser.name}</p>
-                <p className="text-xs text-zinc-500 mt-0.5">{selectedUser.email}</p>
-              </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Select System Role</label>
+            <select
+              value={newRole}
+              onChange={(e: any) => setNewRole(e.target.value)}
+              className="px-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-200 text-sm focus:outline-none"
+            >
+              <option value="student">Student</option>
+              <option value="placement_officer">Placement Officer</option>
+              <option value="recruiter">Recruiter</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Select System Role</label>
-                <select
-                  value={newRole}
-                  onChange={(e: any) => setNewRole(e.target.value)}
-                  className="px-4 py-2.5 bg-zinc-950/60 border border-zinc-800 rounded-xl text-zinc-200 text-sm focus:outline-none"
-                >
-                  <option value="student">Student</option>
-                  <option value="placement_officer">Placement Officer</option>
-                  <option value="recruiter">Recruiter</option>
-                  <option value="admin">Administrator</option>
-                </select>
-              </div>
-
-              {/* Show company mapper dropdown only for recruiter role */}
-              {newRole === 'recruiter' && (
-                <div className="flex flex-col gap-1.5 animate-in slide-in-from-top-1.5 duration-150">
-                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Associated Employer Company</label>
-                  <select
-                    value={selectedCompanyId}
-                    onChange={(e) => setSelectedCompanyId(e.target.value)}
-                    className="px-4 py-2.5 bg-zinc-950/60 border border-zinc-800 rounded-xl text-zinc-200 text-sm focus:outline-none"
-                  >
-                    <option value="">-- Choose Company Profile --</option>
-                    {companies.map((c) => (
-                      <option key={c._id} value={c._id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6 border-t border-zinc-850 pt-5">
-              <button
-                type="button"
-                onClick={() => setRoleModalOpen(false)}
-                className="px-4 py-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-900 text-xs font-semibold rounded-xl text-zinc-300 transition-colors"
+          {newRole === 'recruiter' && (
+            <div className="flex flex-col gap-1.5 animate-in slide-in-from-top-1.5 duration-150">
+              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Associated Employer Company</label>
+              <select
+                value={selectedCompanyId}
+                onChange={(e) => setSelectedCompanyId(e.target.value)}
+                className="px-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-200 text-sm focus:outline-none"
               >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={updating}
-                className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-xs font-bold rounded-xl text-zinc-100 transition-all flex items-center gap-1.5"
-              >
-                {updating ? (
-                  <div className="w-4 h-4 border-2 border-zinc-100 border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  <>Apply Changes</>
-                )}
-              </button>
+                <option value="">-- Choose Company Profile --</option>
+                {companies.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
-          </form>
+          )}
         </div>
-      )}
+      </Modal>
     </div>
   );
 };

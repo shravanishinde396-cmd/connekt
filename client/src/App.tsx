@@ -12,6 +12,8 @@ import DashboardLayout from './layouts/DashboardLayout.js';
 import LandingPage from './pages/LandingPage.js';
 import LoginPage from './pages/LoginPage.js';
 import RegisterPage from './pages/RegisterPage.js';
+import ComponentShowcase from './pages/dev/ComponentShowcase.js';
+
 
 // Dashboard Pages
 import StudentDashboard from './pages/student/StudentDashboard.js';
@@ -37,6 +39,7 @@ function App() {
               {/* Public Routes */}
               <Route element={<PublicLayout />}>
                 <Route path="/" element={<LandingPage />} />
+                <Route path="/dev/components" element={<ComponentShowcase />} />
               </Route>
 
               {/* Authentication Routes */}

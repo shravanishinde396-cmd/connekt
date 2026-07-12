@@ -119,6 +119,63 @@ const seed = async () => {
     await studentProfile.save();
     console.log('Student created: student@placepilot.com / Password123');
 
+    // 4b. Student 1
+    const student1 = new User({
+      name: 'Student One',
+      email: 'student1@placepilot.com',
+      passwordHash: hashed,
+      role: 'student',
+      isEmailVerified: true,
+    });
+    await student1.save();
+
+    // Student Profile 1
+    const studentProfile1 = new StudentProfile({
+      userId: student1._id,
+      department: 'Computer Science',
+      batch: '2026',
+      CGPA: 8.5,
+      backlogs: 0,
+      skills: ['React', 'Node.js', 'TypeScript', 'Express', 'MongoDB', 'Python'],
+      certifications: [
+        {
+          name: 'AWS Certified Cloud Practitioner',
+          organization: 'Amazon Web Services',
+          issueDate: new Date('2025-01-15'),
+        },
+      ],
+      projects: [
+        {
+          title: 'E-Commerce Platform',
+          description: 'A full-stack online store with shopping cart and payment integration.',
+          technologiesUsed: ['React', 'Node.js', 'Express', 'MongoDB'],
+          link: 'https://github.com/student/ecommerce',
+        },
+      ],
+      education: [
+        {
+          institution: 'State Engineering College',
+          degree: 'Bachelor of Technology',
+          fieldOfStudy: 'Computer Science & Engineering',
+          startDate: new Date('2022-08-01'),
+          percentageOrCGPA: 8.5,
+        },
+      ],
+      experience: [
+        {
+          company: 'Tech Solutions Inc.',
+          role: 'Web Development Intern',
+          description: 'Developed and maintained responsive web applications using React and Tailwind CSS.',
+          startDate: new Date('2025-05-01'),
+          endDate: new Date('2025-07-01'),
+          isCurrent: false,
+        },
+      ],
+      profileCompletion: 85,
+    });
+    await studentProfile1.save();
+    console.log('Student 1 created: student1@placepilot.com / Password123');
+
     // Seed Companies
     console.log('Seeding Companies...');
     const google = new Company({

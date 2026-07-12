@@ -6,6 +6,9 @@ import { Company } from '../models/Company.js';
 import { Drive } from '../models/Drive.js';
 import { uploadToCloudinaryOrLocal } from '../config/storage.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import fs from 'fs';
+import path from 'path';
 
 // Calculate profile completion score dynamically
 const calculateCompletion = (profile: any): number => {
@@ -317,6 +320,107 @@ export const applyToStudentDrive = async (
     res.json({
       message: 'Successfully applied to drive!',
       applicationStatus: 'Applied',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getResumeBase64 = async (resumeUrl: string): Promise<string> => {
+  if (resumeUrl.startsWith('/uploads/')) {
+    // Local relative URL
+    const localPath = path.join(process.cwd(), resumeUrl);
+    if (fs.existsSync(localPath)) {
+      return fs.readFileSync(localPath).toString('base64');
+    }
+  }
+
+  // Remote URL (e.g. Cloudinary)
+  const response = await fetch(resumeUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch file from URL: ${resumeUrl}`);
+  }
+  const arrayBuffer = await response.arrayBuffer();
+  return Buffer.from(arrayBuffer).toString('base64');
+};
+
+export const analyzeResume = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const profile = await StudentProfile.findOne({ userId: req.user.id });
+    if (!profile || !profile.resumeUrl) {
+      res.status(400).json({ error: 'Please upload your resume first.' });
+      return;
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      res.status(500).json({ error: 'Gemini API credentials are not configured on the server.' });
+      return;
+    }
+
+    // Get Base64 encoding of PDF file
+    let pdfBase64: string;
+    try {
+      pdfBase64 = await getResumeBase64(profile.resumeUrl);
+    } catch (err: any) {
+      console.error('Failed to retrieve resume buffer:', err);
+      res.status(500).json({ error: 'Failed to download or read resume PDF file.' });
+      return;
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    const prompt = `You are a professional resume reviewer and Applicant Tracking System (ATS) auditor. 
+Analyze the uploaded resume PDF to calculate its ATS matching capability. 
+Return a JSON object conforming exactly to the following structure:
+{
+  "atsScore": number, // an integer from 0 to 100 representing strength and readability
+  "summary": "string", // a concise professional summary of the candidate based on resume
+  "missingSkills": ["string"], // array of key placement skills missing or weak in the resume
+  "grammarSuggestions": ["string"], // array of grammar, wording, or formatting suggestions
+  "keywordSuggestions": ["string"], // array of ATS-friendly keywords and action verbs to inject
+  "strengthRating": number // a score from 1 to 5 representing overall strength
+}
+Return only the raw JSON. Do not include markdown code block syntax (no \`\`\`json or similar wrapping blocks). Ensure the output is valid JSON.`;
+
+    const result = await model.generateContent([
+      {
+        inlineData: {
+          data: pdfBase64,
+          mimeType: 'application/pdf',
+        },
+      },
+      prompt,
+    ]);
+
+    const resultText = result.response.text();
+    const cleanJson = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
+    
+    let analysis;
+    try {
+      analysis = JSON.parse(cleanJson);
+    } catch (parseErr) {
+      console.error('Failed to parse Gemini response as JSON. Raw response:', resultText);
+      res.status(502).json({ error: 'Failed to parse AI advisor feedback. Please retry.' });
+      return;
+    }
+
+    // Save analysis on StudentProfile
+    profile.resumeAnalysis = analysis;
+    await profile.save();
+
+    res.json({
+      message: 'Resume analyzed successfully',
+      analysis,
     });
   } catch (error) {
     next(error);
