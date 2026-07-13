@@ -13,6 +13,8 @@ import studentRoutes from './routes/student.js';
 import officerRoutes from './routes/officer.js';
 import recruiterRoutes from './routes/recruiter.js';
 import adminRoutes from './routes/admin.js';
+import aiRoutes from './routes/ai.js';
+import notificationRoutes from './routes/notification.js';
 
 dotenv.config();
 
@@ -70,7 +72,7 @@ app.use(cookieParser());
 // Rate Limiting
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
+  max: process.env.NODE_ENV === 'production' ? 100 : 10000, // Limit each IP to 100 requests per window
   message: { error: 'Too many requests from this IP, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -91,6 +93,12 @@ app.use('/api/recruiter', recruiterRoutes);
 
 // Admin Routes
 app.use('/api/admin', adminRoutes);
+
+// AI Routes
+app.use('/api/ai', aiRoutes);
+
+// Notification Routes
+app.use('/api/notifications', notificationRoutes);
 
 // Serve static uploads
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));

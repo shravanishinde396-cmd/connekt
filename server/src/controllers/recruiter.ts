@@ -4,6 +4,7 @@ import { Drive } from '../models/Drive.js';
 import { User } from '../models/User.js';
 import { StudentProfile } from '../models/StudentProfile.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
+import { handleApplicantStatusChange, handleInterviewScheduling } from '../utils/notification.js';
 
 // Get associated recruiter company
 export const getRecruiterCompany = async (
@@ -114,6 +115,8 @@ export const getRecruiterDriveApplicants = async (
         status: applicant.status,
         resumeUrl: applicant.resumeUrl,
         feedback: applicant.feedback,
+        interviewDate: applicant.interviewDate,
+        interviewTime: applicant.interviewTime,
         student: {
           _id: studentUser?._id || studentUser,
           name: studentUser?.name || 'Anonymous Student',
@@ -163,11 +166,35 @@ export const updateRecruiterApplicantStatus = async (
       return;
     }
 
-    const { status, feedback } = req.body;
+    const { status, feedback, interviewDate, interviewTime } = req.body;
+    const oldStatus = applicant.status;
+
+    let scheduleUpdated = false;
+    if (interviewDate !== undefined && interviewDate !== applicant.interviewDate) {
+      applicant.interviewDate = interviewDate;
+      scheduleUpdated = true;
+    }
+    if (interviewTime !== undefined && interviewTime !== applicant.interviewTime) {
+      applicant.interviewTime = interviewTime;
+      scheduleUpdated = true;
+    }
+
     if (status) applicant.status = status;
     if (feedback !== undefined) applicant.feedback = feedback;
 
     await drive.save();
+
+    const senderId = req.user?.id || '';
+    const io = req.io;
+
+    if (status && status !== oldStatus) {
+      handleApplicantStatusChange(drive, applicant, oldStatus, status, senderId, io);
+    }
+
+    if (scheduleUpdated && interviewDate && interviewTime) {
+      handleInterviewScheduling(drive, applicant, interviewDate, interviewTime, senderId, io);
+    }
+
     res.json({ message: 'Applicant updated successfully', applicant });
   } catch (error) {
     next(error);

@@ -1,14 +1,17 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, Compass, User, Briefcase, Settings, Sparkles } from 'lucide-react';
+import { Search, Compass, User, Briefcase, Settings, Sparkles, Building2, Users } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext.js';
-
+import { useAuth } from '../../contexts/AuthContext.js';
 
 export const CommandPalette: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -37,20 +40,68 @@ export const CommandPalette: React.FC = () => {
     };
   }, [isOpen]);
 
-  const items = [
-    { id: '1', name: 'Go to Student Dashboard', category: 'Navigation', icon: <Compass className="w-4 h-4" /> },
-    { id: '2', name: 'Manage My Profile', category: 'Navigation', icon: <User className="w-4 h-4" /> },
-    { id: '3', name: 'Browse Placement Drives', category: 'Navigation', icon: <Briefcase className="w-4 h-4" /> },
-    { id: '4', name: 'Open System Settings', category: 'Admin', icon: <Settings className="w-4 h-4" /> },
-    { id: '5', name: 'Gemini AI Advisor', category: 'Features', icon: <Sparkles className="w-4 h-4 text-purple-400" /> },
-  ];
+  // Create role-specific items dynamically
+  const getItems = () => {
+    if (!user) return [];
+
+    const baseItems = [
+      { id: 'home', name: 'Go to Landing Page', category: 'Navigation', path: '/', icon: <Compass className="w-4 h-4" /> }
+    ];
+
+    if (user.role === 'student') {
+      return [
+        ...baseItems,
+        { id: 's-dash', name: 'Go to Student Dashboard', category: 'Student Portal', path: '/dashboard/student', icon: <Compass className="w-4 h-4" /> },
+        { id: 's-profile', name: 'Manage Resume & Profile', category: 'Student Portal', path: '/dashboard/student/profile', icon: <User className="w-4 h-4" /> },
+        { id: 's-drives', name: 'Browse Placement Drives', category: 'Student Portal', path: '/dashboard/student/drives', icon: <Briefcase className="w-4 h-4" /> },
+        { id: 's-chat', name: 'Chat with PlacePilot AI Advisor', category: 'Features', action: 'toggle-ai-chat', icon: <Sparkles className="w-4 h-4 text-purple-400" /> }
+      ];
+    }
+
+    if (user.role === 'placement_officer') {
+      return [
+        ...baseItems,
+        { id: 'o-dash', name: 'Go to Officer Overview', category: 'Officer Portal', path: '/dashboard/placement_officer', icon: <Compass className="w-4 h-4" /> },
+        { id: 'o-companies', name: 'Manage Corporate Partners', category: 'Officer Portal', path: '/dashboard/placement_officer/companies', icon: <Building2 className="w-4 h-4" /> },
+        { id: 'o-drives', name: 'Manage Placement Drives', category: 'Officer Portal', path: '/dashboard/placement_officer/drives', icon: <Briefcase className="w-4 h-4" /> }
+      ];
+    }
+
+    if (user.role === 'recruiter') {
+      return [
+        ...baseItems,
+        { id: 'r-dash', name: 'Go to Recruiter Overview', category: 'Recruiter Portal', path: '/dashboard/recruiter', icon: <Compass className="w-4 h-4" /> },
+        { id: 'r-drives', name: 'Manage Corporate Hiring Drives', category: 'Recruiter Portal', path: '/dashboard/recruiter/drives', icon: <Briefcase className="w-4 h-4" /> },
+        { id: 'r-applicants', name: 'Manage Candidates & Applications', category: 'Recruiter Portal', path: '/dashboard/recruiter/applicants', icon: <Users className="w-4 h-4" /> }
+      ];
+    }
+
+    if (user.role === 'admin') {
+      return [
+        ...baseItems,
+        { id: 'a-overview', name: 'Go to Admin Overview', category: 'Admin Panel', path: '/dashboard/admin?tab=overview', icon: <Compass className="w-4 h-4" /> },
+        { id: 'a-users', name: 'Manage User Accounts', category: 'Admin Panel', path: '/dashboard/admin?tab=users', icon: <Users className="w-4 h-4" /> },
+        { id: 'a-audit', name: 'View System Audit Logs', category: 'Admin Panel', path: '/dashboard/admin?tab=audit', icon: <Settings className="w-4 h-4" /> }
+      ];
+    }
+
+    return baseItems;
+  };
+
+  const items = getItems();
 
   const filteredItems = items.filter((item) =>
     item.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAction = (name: string) => {
-    toast(`Command executed: ${name}`, 'success');
+  const handleAction = (item: any) => {
+    if (item.path) {
+      navigate(item.path);
+      toast(`Navigating to ${item.name}`, 'info');
+    } else if (item.action === 'toggle-ai-chat') {
+      window.dispatchEvent(new CustomEvent('open-ai-chat'));
+      toast(`Opening PlacePilot AI Career Advisor`, 'success');
+    }
     setIsOpen(false);
     setSearch('');
   };
@@ -97,7 +148,7 @@ export const CommandPalette: React.FC = () => {
                   {filteredItems.map((item) => (
                     <button
                       key={item.id}
-                      onClick={() => handleAction(item.name)}
+                      onClick={() => handleAction(item)}
                       className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-zinc-850/50 text-zinc-300 hover:text-zinc-100 transition-colors text-left text-sm cursor-pointer select-none group"
                     >
                       <div className="flex items-center gap-3">

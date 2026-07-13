@@ -112,50 +112,50 @@ This document outlines the step-by-step implementation plan for PlacePilot. We w
 - [x] Embed detailed charts using Recharts in Officer and Admin dashboards
 - [x] Verify Phase 7 (run aggregations, test download Excel/PDF, verify chart rendering)
 
-### [ ] Phase 8 — Real-Time & Email
-- [ ] Set up Socket.io server connection and event listeners
-- [ ] Create Frontend Socket Context (`SocketContext`)
-- [ ] Build Real-Time Notifications system:
-  - [ ] Server emits `notification:new` on application status change, new drive published, interview scheduled
-  - [ ] Notification schema, API endpoints (GET unread, PUT mark as read)
-  - [ ] Animated navbar notification bell, popup panel, real-time toast alerts
-- [ ] Set up Resend integration on backend:
-  - [ ] Email templates: Verification Email, Password Reset, Interview Scheduled, Offer Letter Issued
-  - [ ] Trigger emails on critical actions
-- [ ] Verify Phase 8 (trigger notification or email, check real-time receive in browser, email logs)
+### [x] Phase 8 — Real-Time & Email
+- [x] Set up Socket.io server connection and event listeners
+- [x] Create Frontend Socket Context (`SocketContext`)
+- [x] Build Real-Time Notifications system:
+  - [x] Server emits `notification:new` on application status change, new drive published, interview scheduled
+  - [x] Notification schema, API endpoints (GET unread, PUT mark as read)
+  - [x] Animated navbar notification bell, popup panel, real-time toast alerts
+- [x] Set up Resend integration on backend:
+  - [x] Email templates: Verification Email, Password Reset, Interview Scheduled, Offer Letter Issued
+  - [x] Trigger emails on critical actions
+- [x] Verify Phase 8 (trigger notification or email, check real-time receive in browser, email logs)
 
-### [ ] Phase 9 — AI Features (Google Gemini)
-- [ ] Build `geminiClient` wrapper service with JSON constraint and try-repair-fallback
-- [ ] **AI Resume Analyzer (7.1)**:
-  - [ ] Parser service (extract text from PDF resume)
-  - [ ] Prompt Gemini for structured analysis
-  - [ ] Frontend analysis dashboard tab on Student Profile
-- [ ] **AI Resume ↔ JD Matching (7.2)**:
-  - [ ] Batch match resume against JD
-  - [ ] Recruiter applicant list shows "AI Match Score" and matching/missing skills
-- [ ] **AI Career Advisor (7.3)**:
-  - [ ] Analyze student profile, return roadmap and company matches
-  - [ ] Frontend career guidance panel
-- [ ] **AI Interview Generator (7.4)**:
-  - [ ] Generate customized questions based on resume & job role
-  - [ ] Frontend Mock Interview prep interface
-- [ ] **AI Chatbot Widget (7.5)**:
-  - [ ] Context-aware chatbot in student panel (remembers eligibility rules)
-  - [ ] Collapsible chat widget
-- [ ] Verify Phase 9 (trigger all AI panels, inspect JSON parsing, check offline mock behavior)
+### [x] Phase 9 — AI Features (Google Gemini)
+- [x] Build `geminiClient` wrapper service with JSON constraint and try-repair-fallback
+- [x] **AI Resume Analyzer (7.1)**:
+  - [x] Parser service (extract text from PDF resume)
+  - [x] Prompt Gemini for structured analysis
+  - [x] Frontend analysis dashboard tab on Student Profile
+- [x] **AI Resume ↔ JD Matching (7.2)**:
+  - [x] Batch match resume against JD
+  - [x] Recruiter applicant list shows "AI Match Score" and matching/missing skills
+- [x] **AI Career Advisor (7.3)**:
+  - [x] Analyze student profile, return roadmap and company matches
+  - [x] Frontend career guidance panel
+- [x] **AI Interview Generator (7.4)**:
+  - [x] Generate customized questions based on resume & job role
+  - [x] Frontend Mock Interview prep interface
+- [x] **AI Chatbot Widget (7.5)**:
+  - [x] Context-aware chatbot in student panel (remembers eligibility rules)
+  - [x] Collapsible chat widget
+- [x] Verify Phase 9 (trigger all AI panels, inspect JSON parsing, check offline mock behavior)
 
-### [ ] Phase 10 — Global Search & Polish
-- [ ] Implement search service using text indexes or search routes (across drives, companies, students)
-- [ ] Add Command Palette (⌘K / Ctrl+K) in the client layout for quick navigation
-- [ ] Add Framer Motion transitions (fade-in, list item staggers, slide-overs)
-- [ ] Conduct Responsive Design QA and Accessibility check (focus states, labels)
-- [ ] Verify Phase 10 (navigate entirely via keyboard, check mobile responsiveness)
+### [x] Phase 10 — Global Search & Polish
+- [x] Implement search service using text indexes or search routes (across drives, companies, students)
+- [x] Add Command Palette (⌘K / Ctrl+K) in the client layout for quick navigation
+- [x] Add Framer Motion transitions (fade-in, list item staggers, slide-overs)
+- [x] Conduct Responsive Design QA and Accessibility check (focus states, labels)
+- [x] Verify Phase 10 (navigate entirely via keyboard, check mobile responsiveness)
 
-### [ ] Phase 11 — Seed Data, Docs & Deploy Config
-- [ ] Create comprehensive seed script with realistic data:
-  - [ ] 1 Admin, 2 Officers, 3 Recruiters, 25+ Students
-  - [ ] Open and closed drives, multiple applications in different states (applied, shortlisted, offer)
-  - [ ] Notifications and activity logs populated
-- [ ] Write detailed `README.md` (installation, environment keys, architecture, role credentials)
-- [ ] Prepare deploy-ready files: `vercel.json` (frontend), Render configuration (`render.yaml` or build steps), and environment variables
-- [ ] Verify Phase 11 (run fresh db wipe & seed, start clean, verify everything works seamlessly)
+### [x] Phase 11 — Seed Data, Docs & Deploy Config
+- [x] Create comprehensive seed script with realistic data:
+  - [x] 1 Admin, 2 Officers, 3 Recruiters, 25+ Students
+  - [x] Open and closed drives, multiple applications in different states (applied, shortlisted, offer)
+  - [x] Notifications and activity logs populated
+- [x] Write detailed `README.md` (installation, environment keys, architecture, role credentials)
+- [x] Prepare deploy-ready files: `vercel.json` (frontend), Render configuration (`render.yaml` or build steps), and environment variables
+- [x] Verify Phase 11 (run fresh db wipe & seed, start clean, verify everything works seamlessly)

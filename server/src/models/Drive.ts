@@ -6,6 +6,8 @@ export interface IApplicant {
   status: 'Applied' | 'Shortlisted' | 'Rejected' | 'Selected';
   appliedAt: Date;
   feedback?: string;
+  interviewDate?: string;
+  interviewTime?: string;
 }
 
 export interface IDrive extends Document {
@@ -33,6 +35,8 @@ const ApplicantSchema = new Schema({
   },
   appliedAt: { type: Date, default: Date.now },
   feedback: { type: String },
+  interviewDate: { type: String },
+  interviewTime: { type: String },
 });
 
 const DriveSchema: Schema = new Schema(

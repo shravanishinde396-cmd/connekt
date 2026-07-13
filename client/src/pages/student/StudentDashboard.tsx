@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../../services/api.js';
 import { useToast } from '../../contexts/ToastContext.js';
 import { useAuth } from '../../contexts/AuthContext.js';
@@ -9,17 +9,12 @@ import { Badge } from '../../components/ui/Badge.js';
 import { Skeleton } from '../../components/ui/Skeleton.js';
 import { NumberCounter } from '../../components/framer/NumberCounter.js';
 import { PageTransition } from '../../components/framer/MotionWrappers.js';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Briefcase,
-  Award,
-  Calendar,
-  CheckCircle,
-  ArrowRight,
-  TrendingUp,
-  Clock,
-  Sparkles,
-  ChevronRight,
-  RefreshCw,
+  Briefcase, Award, Calendar as CalendarIcon, CheckCircle, ArrowRight,
+  TrendingUp, Sparkles, RefreshCw, Bot, FileText,
+  CheckSquare, Bell, ShieldAlert, Cpu, AwardIcon,
+  MessageSquare, Download, X
 } from 'lucide-react';
 
 interface Company {
@@ -44,16 +39,56 @@ interface StudentProfile {
   profileCompletion: number;
   department: string;
   CGPA: number;
+  skills: string[];
+  resumeUrl?: string;
 }
 
 export const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+  
+  // Data States
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [drives, setDrives] = useState<Drive[]>([]);
+  const [bookmarks, setBookmarks] = useState<string[]>(['Google LLC', 'Microsoft']);
+
+  // AI Feature States
+  const [atsAnalysis, setAtsAnalysis] = useState<any>(null);
+  const [atsLoading, setAtsLoading] = useState(false);
+  const [roadmap, setRoadmap] = useState<any>(null);
+  const [roadmapLoading, setRoadmapLoading] = useState(false);
+  const [interviewQuestions, setInterviewQuestions] = useState<any[]>([]);
+  const [interviewLoading, setInterviewLoading] = useState(false);
+  const [probabilityData, setProbabilityData] = useState<any>(null);
+  const [probabilityLoading, setProbabilityLoading] = useState(false);
+
+  // Mock interactive interview state
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [userAnswer, setUserAnswer] = useState('');
+  const [interviewFeedback, setInterviewFeedback] = useState<string | null>(null);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+
+  // Mock Calendar Events
+  const [calendarEvents] = useState([
+    { id: '1', title: 'Google Technical Interview', date: '2026-07-15', time: '10:00 AM', type: 'Interview' },
+    { id: '2', title: 'Microsoft Drive Deadline', date: '2026-07-18', time: '11:59 PM', type: 'Deadline' },
+    { id: '3', title: 'Stripe PPT Session', date: '2026-07-20', time: '02:00 PM', type: 'Presentation' },
+  ]);
+
+  // Mock Offer Letters
+  const [offers] = useState([
+    { id: '1', company: 'Google LLC', role: 'Associate Software Engineer Intern', package: '22 LPA', date: 'July 10, 2026', file: 'google_offer_letter.pdf' }
+  ]);
+
+  // Mock Notifications list
+  const [notifications] = useState([
+    { id: '1', title: 'Resume Accepted', msg: 'Your resume was successfully matched with Microsoft requirements.', time: '1 hour ago', unread: true },
+    { id: '2', title: 'Interview Scheduled', msg: 'Technical Interview round with Google scheduled.', time: '4 hours ago', unread: true },
+    { id: '3', title: 'Profile Status', msg: 'Your placement officer approved your CGPA verification.', time: '1 day ago', unread: false }
+  ]);
 
   const fetchDashboardData = async () => {
     try {
@@ -74,6 +109,117 @@ export const StudentDashboard: React.FC = () => {
     fetchDashboardData();
   }, []);
 
+  const runAtsAnalysis = async () => {
+    if (!profile?.resumeUrl) {
+      toast('Please upload your resume in Profile settings first!', 'info');
+      return;
+    }
+    setAtsLoading(true);
+    try {
+      const res = await api.post('/student/profile/analyze-resume');
+      setAtsAnalysis(res.data.analysis);
+      toast('AI Resume ATS Audit completed!', 'success');
+    } catch (err: any) {
+      toast(err.response?.data?.error || 'Failed to analyze resume.', 'error');
+    } finally {
+      setAtsLoading(false);
+    }
+  };
+
+  const fetchRoadmap = async () => {
+    setRoadmapLoading(true);
+    try {
+      const res = await api.get('/ai/career-roadmap');
+      setRoadmap(res.data);
+    } catch (err: any) {
+      console.error(err);
+      toast('Failed to load career roadmap advice.', 'error');
+    } finally {
+      setRoadmapLoading(false);
+    }
+  };
+
+  const fetchInterviewQuestions = async () => {
+    setInterviewLoading(true);
+    try {
+      const res = await api.post('/ai/interview-questions', {
+        role: 'Software Engineer',
+        company: 'Product Giant'
+      });
+      setInterviewQuestions(res.data.questions || []);
+      setCurrentQuestionIndex(0);
+      setInterviewFeedback(null);
+    } catch (err: any) {
+      console.error(err);
+      toast('Failed to generate interview preparation questions.', 'error');
+    } finally {
+      setInterviewLoading(false);
+    }
+  };
+
+  const fetchProbability = async () => {
+    setProbabilityLoading(true);
+    try {
+      const res = await api.post('/ai/eligibility-prediction');
+      setProbabilityData(res.data);
+    } catch (err: any) {
+      console.error(err);
+    } finally {
+      setProbabilityLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'ai-resume') {
+      if (profile?.resumeUrl && !atsAnalysis) runAtsAnalysis();
+    } else if (activeTab === 'roadmap') {
+      if (!roadmap) fetchRoadmap();
+      if (!probabilityData) fetchProbability();
+    } else if (activeTab === 'interview') {
+      if (interviewQuestions.length === 0) fetchInterviewQuestions();
+    }
+  }, [activeTab]);
+
+  const toggleBookmark = (companyName: string) => {
+    if (bookmarks.includes(companyName)) {
+      setBookmarks(bookmarks.filter(b => b !== companyName));
+      toast(`Removed ${companyName} from bookmarks`, 'info');
+    } else {
+      setBookmarks([...bookmarks, companyName]);
+      toast(`Bookmarked ${companyName}`, 'success');
+    }
+  };
+
+  const submitMockAnswer = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userAnswer.trim()) return;
+
+    setFeedbackLoading(true);
+    // Simulate AI feedback review based on keywords matching hints
+    setTimeout(() => {
+      const hint = interviewQuestions[currentQuestionIndex]?.expectedAnswerHint || '';
+      let matches = 0;
+      hint.split(' ').forEach((word: string) => {
+        if (word.length > 4 && userAnswer.toLowerCase().includes(word.toLowerCase().substring(0, 4))) {
+          matches++;
+        }
+      });
+
+      const score = Math.min(Math.round((matches / Math.max(hint.split(' ').length / 3, 1)) * 100), 100);
+      let feedback = '';
+      if (score > 60) {
+        feedback = `Excellent Answer! Score: ${score}%. Your response covers core concepts and articulates performance optimization details effectively.`;
+      } else if (score > 30) {
+        feedback = `Good attempt. Score: ${score}%. You covered basics, but you should mention: "${hint.split(',').slice(0, 2).join(',')}".`;
+      } else {
+        feedback = `Needs detail. Score: ${score}%. Review the expected answer hint to refine your technical articulation.`;
+      }
+
+      setInterviewFeedback(feedback);
+      setFeedbackLoading(false);
+    }, 1500);
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col gap-8">
@@ -84,344 +230,640 @@ export const StudentDashboard: React.FC = () => {
           <Skeleton className="h-28 rounded-3xl" />
           <Skeleton className="h-28 rounded-3xl" />
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <Skeleton className="h-96 rounded-3xl" />
-          </div>
-          <div>
-            <Skeleton className="h-96 rounded-3xl" />
-          </div>
-        </div>
       </div>
     );
   }
 
-  // Derived stats
   const appliedDrives = drives.filter((d) => d.hasApplied);
-  const totalAppliedCount = appliedDrives.length;
-  
-  const shortlistedCount = appliedDrives.filter(
-    (d) => d.applicationStatus === 'Shortlisted' || d.applicationStatus === 'Selected'
-  ).length;
-
-  const offersCount = appliedDrives.filter((d) => d.applicationStatus === 'Selected').length;
-
-  // Total eligible active drives
   const eligibleDrives = drives.filter((d) => !d.hasApplied && d.status === 'Active');
-  const eligibleCount = eligibleDrives.length;
-
-  const completionPercent = profile?.profileCompletion || 0;
-
-  // Mocked upcoming interviews for layout rendering (tied with Socket/calendar later)
-  const upcomingInterviews = [
-    {
-      id: '1',
-      company: 'Google LLC',
-      role: 'Associate Software Engineer Intern',
-      date: 'July 12, 2026',
-      time: '10:00 AM (IST)',
-      type: 'Technical Round 1 (Virtual)',
-    },
-  ];
 
   return (
     <PageTransition>
       <div className="flex flex-col gap-8">
         {/* Title greeting */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-extrabold text-zinc-100 tracking-tight">Student Workspace</h1>
-            <p className="text-sm text-zinc-400 mt-1">Welcome back, {user?.name}. Keep track of your job search progress.</p>
+            <p className="text-sm text-zinc-400 mt-1">Welcome back, {user?.name}. Manage your profile and placement drives.</p>
           </div>
 
-          {/* Sync / Refresh */}
           <Button
             onClick={fetchDashboardData}
             variant="outline"
             size="sm"
             className="cursor-pointer"
           >
-            <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Refresh Sync
+            <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin-hover" /> Refresh Sync
           </Button>
         </div>
 
-        {/* Profile Completion Callout */}
-        {completionPercent < 100 && (
-          <div className="bg-gradient-to-r from-purple-950/20 via-zinc-900/60 to-zinc-900/40 border border-purple-500/25 p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden backdrop-blur-md">
-            <div className="absolute right-0 top-0 w-64 h-64 bg-purple-500/5 blur-3xl rounded-full -mr-20 -mt-20"></div>
-            
-            <div className="flex gap-4 items-start max-w-xl">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0 mt-0.5">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-extrabold text-zinc-100 text-sm">Complete Your Placement Profile</h3>
-                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                  Your profile is only {completionPercent}% complete. Recruiters prioritize applicants with fully detailed qualifications, academic scores, and resumes.
-                </p>
-                
-                {/* Progress bar */}
-                <div className="w-full max-w-sm mt-3 flex items-center gap-3">
-                  <div className="flex-1 bg-zinc-950 border border-zinc-850 h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-purple-500 to-violet-500 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${completionPercent}%` }}
-                    ></div>
+        {/* Tab Controls */}
+        <div className="flex flex-wrap border-b border-zinc-800 gap-1">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-5 py-3 text-sm font-semibold transition-all border-b-2 rounded-t-xl flex items-center gap-2 cursor-pointer ${
+              activeTab === 'overview'
+                ? 'border-purple-500 text-purple-400 bg-purple-500/5'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+            }`}
+          >
+            <Briefcase className="w-4 h-4" /> Overview & Timeline
+          </button>
+          <button
+            onClick={() => setActiveTab('ai-resume')}
+            className={`px-5 py-3 text-sm font-semibold transition-all border-b-2 rounded-t-xl flex items-center gap-2 cursor-pointer ${
+              activeTab === 'ai-resume'
+                ? 'border-purple-500 text-purple-400 bg-purple-500/5'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+            }`}
+          >
+            <Bot className="w-4 h-4" /> AI Resume Score & Suggestions
+          </button>
+          <button
+            onClick={() => setActiveTab('roadmap')}
+            className={`px-5 py-3 text-sm font-semibold transition-all border-b-2 rounded-t-xl flex items-center gap-2 cursor-pointer ${
+              activeTab === 'roadmap'
+                ? 'border-purple-500 text-purple-400 bg-purple-500/5'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" /> Roadmap & Eligibility
+          </button>
+          <button
+            onClick={() => setActiveTab('interview')}
+            className={`px-5 py-3 text-sm font-semibold transition-all border-b-2 rounded-t-xl flex items-center gap-2 cursor-pointer ${
+              activeTab === 'interview'
+                ? 'border-purple-500 text-purple-400 bg-purple-500/5'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" /> Mock Interview Prep
+          </button>
+          <button
+            onClick={() => setActiveTab('notifications')}
+            className={`px-5 py-3 text-sm font-semibold transition-all border-b-2 rounded-t-xl flex items-center gap-2 cursor-pointer ${
+              activeTab === 'notifications'
+                ? 'border-purple-500 text-purple-400 bg-purple-500/5'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+            }`}
+          >
+            <Bell className="w-4 h-4" /> Calendar & Alerts
+          </button>
+        </div>
+
+        {/* Tab 1: Overview & Applications Timeline */}
+        {activeTab === 'overview' && (
+          <div className="space-y-8 animate-in fade-in duration-200">
+            {/* KPI Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Card className="hover:border-zinc-700 transition-all duration-300 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start">
+                    <span className="text-sm font-medium text-zinc-400">Applications</span>
+                    <Briefcase className="w-5 h-5 text-purple-400" />
                   </div>
-                  <span className="text-xs font-mono font-bold text-purple-400">{completionPercent}%</span>
+                  <div className="mt-4">
+                    <span className="text-3xl font-bold text-zinc-100 tracking-tight">
+                      <NumberCounter value={appliedDrives.length} />
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs text-zinc-500">Submitted job applications</p>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:border-zinc-700 transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start">
+                    <span className="text-sm font-medium text-zinc-400">Eligible Drives</span>
+                    <TrendingUp className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div className="mt-4 flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-zinc-100 tracking-tight">
+                      <NumberCounter value={eligibleDrives.length} />
+                    </span>
+                    <Badge variant="success">{eligibleDrives.length} open</Badge>
+                  </div>
+                  <p className="mt-2 text-xs text-zinc-500">Available drives right now</p>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:border-zinc-700 transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start">
+                    <span className="text-sm font-medium text-zinc-400">Shortlisted Rounds</span>
+                    <Award className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div className="mt-4">
+                    <span className="text-3xl font-bold text-zinc-100 tracking-tight">
+                      <NumberCounter value={appliedDrives.filter(d => d.applicationStatus === 'Shortlisted').length} />
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs text-zinc-500">Interview stage advancements</p>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:border-zinc-700 transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start">
+                    <span className="text-sm font-medium text-zinc-400">Offers Issued</span>
+                    <CheckCircle className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div className="mt-4">
+                    <span className="text-3xl font-bold text-zinc-100 tracking-tight">
+                      <NumberCounter value={offers.length} />
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs text-zinc-500">Selection results pending download</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Split layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Application Timeline History */}
+              <div className="lg:col-span-2 space-y-6">
+                <h3 className="text-lg font-bold text-zinc-200 border-b border-zinc-850 pb-3 flex items-center justify-between">
+                  Application History & Timeline
+                  <Link to="/dashboard/student/drives" className="text-xs font-bold text-purple-400 hover:underline flex items-center gap-1">
+                    Apply to new drives <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </h3>
+
+                {appliedDrives.length === 0 ? (
+                  <div className="bg-zinc-900/10 border border-zinc-850 p-8 rounded-3xl text-center py-12">
+                    <p className="text-zinc-500 text-xs">No active applications. Select a drive and submit your resume to begin.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {appliedDrives.map(drive => (
+                      <div key={drive._id} className="p-5 bg-zinc-950/60 border border-zinc-850 rounded-2xl space-y-4">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-400 font-bold text-sm">
+                              {drive.company.name.charAt(0)}
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-zinc-200">{drive.role}</h4>
+                              <p className="text-xs text-zinc-500">{drive.company.name}</p>
+                            </div>
+                          </div>
+                          <Badge variant={drive.applicationStatus === 'Selected' ? 'success' : drive.applicationStatus === 'Rejected' ? 'destructive' : 'info'}>
+                            {drive.applicationStatus || 'Applied'}
+                          </Badge>
+                        </div>
+
+                        {/* Progression Stepper */}
+                        <div className="flex items-center text-[10px] text-zinc-500 font-semibold justify-between px-4">
+                          <span className="text-emerald-400">1. Applied (Completed)</span>
+                          <span className={drive.applicationStatus === 'Shortlisted' || drive.applicationStatus === 'Selected' ? 'text-emerald-400' : ''}>2. Technical Interview</span>
+                          <span className={drive.applicationStatus === 'Selected' ? 'text-emerald-400' : ''}>3. Offer Decision</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Bookmarked companies */}
+              <div className="space-y-6">
+                <h3 className="text-lg font-bold text-zinc-200 border-b border-zinc-850 pb-3">Bookmarked Companies</h3>
+                <div className="bg-zinc-900/10 border border-zinc-850 p-6 rounded-3xl space-y-4">
+                  {bookmarks.length === 0 ? (
+                    <p className="text-xs text-zinc-500 text-center">No bookmarked companies yet.</p>
+                  ) : (
+                    bookmarks.map((company, idx) => (
+                      <div key={idx} className="p-3 bg-zinc-950/60 border border-zinc-900 rounded-xl flex justify-between items-center">
+                        <span className="text-xs font-bold text-zinc-200">{company}</span>
+                        <button
+                          onClick={() => toggleBookmark(company)}
+                          className="p-1 hover:bg-zinc-900 rounded text-red-400 hover:text-red-300 cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                  
+                  <div className="pt-2">
+                    <span className="text-[10px] text-zinc-500">Bookmark companies during Drives search to keep track here.</span>
+                  </div>
                 </div>
               </div>
             </div>
-
-            <Button
-              onClick={() => navigate('/dashboard/student/profile')}
-              variant="default"
-              className="shrink-0 shadow-lg shadow-purple-600/10 cursor-pointer"
-            >
-              Update Profile <ChevronRight className="w-4 h-4 ml-1.5" />
-            </Button>
           </div>
         )}
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="hover:border-zinc-700 transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <span className="text-sm font-medium text-zinc-400">Applied Drives</span>
-                <div className="p-2 bg-zinc-800/50 rounded-xl text-purple-400 group-hover:text-purple-300 transition-colors">
-                  <Briefcase className="w-5 h-5" />
+        {/* Tab 2: AI Resume Score & Suggestions */}
+        {activeTab === 'ai-resume' && (
+          <div className="space-y-8 animate-in fade-in duration-200">
+            <div className="bg-zinc-900/10 border border-zinc-850 p-6 md:p-8 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="space-y-4 max-w-xl">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/15 text-purple-400 rounded-full text-xs font-bold">
+                  <Bot className="w-3.5 h-3.5" />
+                  Gemini ATS Resume Audit
                 </div>
-              </div>
-              <div className="mt-4">
-                <span className="text-3xl font-bold text-zinc-100 tracking-tight">
-                  <NumberCounter value={totalAppliedCount} />
-                </span>
-              </div>
-              <p className="mt-2 text-xs text-zinc-500">Submitted job applications</p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:border-zinc-700 transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <span className="text-sm font-medium text-zinc-400">Eligible Drives</span>
-                <div className="p-2 bg-zinc-800/50 rounded-xl text-emerald-400 group-hover:text-emerald-350 transition-colors">
-                  <TrendingUp className="w-5 h-5" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-zinc-100 tracking-tight">
-                  <NumberCounter value={eligibleCount} />
-                </span>
-                <Badge variant="success">{eligibleCount} open</Badge>
-              </div>
-              <p className="mt-2 text-xs text-zinc-500">Available for application</p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:border-zinc-700 transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <span className="text-sm font-medium text-zinc-400">Shortlisted</span>
-                <div className="p-2 bg-zinc-800/50 rounded-xl text-blue-400 group-hover:text-blue-350 transition-colors">
-                  <Award className="w-5 h-5" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <span className="text-3xl font-bold text-zinc-100 tracking-tight">
-                  <NumberCounter value={shortlistedCount} />
-                </span>
-              </div>
-              <p className="mt-2 text-xs text-zinc-500">Advanced in recruitment</p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:border-zinc-700 transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <span className="text-sm font-medium text-zinc-400">Offers Received</span>
-                <div className="p-2 bg-zinc-800/50 rounded-xl text-emerald-400 group-hover:text-emerald-350 transition-colors">
-                  <CheckCircle className="w-5 h-5" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <span className="text-3xl font-bold text-zinc-100 tracking-tight">
-                  <NumberCounter value={offersCount} />
-                </span>
-              </div>
-              <p className="mt-2 text-xs text-zinc-500">Pending selection result</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content Split Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left 2/3: Application Tracker Timeline */}
-          <div className="lg:col-span-2 flex flex-col gap-6">
-            <div className="flex justify-between items-center border-b border-zinc-850 pb-3">
-              <h2 className="text-lg font-bold text-zinc-200">Application Pipeline</h2>
-              <Link to="/dashboard/student/drives" className="text-xs font-bold text-purple-400 hover:underline flex items-center gap-1">
-                Browse More Drives <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            {appliedDrives.length === 0 ? (
-              <div className="bg-zinc-900/10 border border-zinc-800/80 rounded-3xl p-8 text-center py-12">
-                <Briefcase className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
-                <h4 className="text-sm font-bold text-zinc-400">No Job Applications Yet</h4>
-                <p className="text-xs text-zinc-500 mt-1 max-w-xs mx-auto">
-                  You haven't applied to any placement drives. Browse eligible drives and submit your resume to begin!
+                <h2 className="text-2xl font-extrabold text-zinc-100">Audit Your Resume Formatting & Skills</h2>
+                <p className="text-sm text-zinc-400 leading-relaxed">
+                  Upload your PDF resume on the profile page, then click the button below. PlacePilot AI will parse your skills, predict ATS compatibility, look for grammar optimizations, and list recommended keywords.
                 </p>
                 <Button
-                  onClick={() => navigate('/dashboard/student/drives')}
-                  variant="outline"
-                  size="sm"
-                  className="mt-4 cursor-pointer"
+                  onClick={runAtsAnalysis}
+                  loading={atsLoading}
+                  className="shadow-xl shadow-purple-600/10 cursor-pointer"
                 >
-                  View Eligible Drives
+                  <Sparkles className="w-4 h-4 mr-2" /> Run ATS Resume Check
                 </Button>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {appliedDrives.map((drive) => (
-                  <div
-                    key={drive._id}
-                    className="bg-zinc-900/30 border border-zinc-850 p-5 rounded-3xl flex flex-col md:flex-row justify-between gap-4 md:items-center hover:border-zinc-800 transition-colors"
-                  >
-                    {/* Company & Role */}
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-center overflow-hidden shrink-0">
-                        {drive.company.logoUrl ? (
-                          <img src={drive.company.logoUrl} alt={drive.company.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <Briefcase className="w-5 h-5 text-zinc-500" />
-                        )}
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-extrabold text-zinc-200">{drive.role}</h4>
-                        <p className="text-xs text-zinc-500 mt-0.5">{drive.company.name}</p>
-                      </div>
+
+              {/* Resume Score circular progress visualization */}
+              <div className="flex flex-col items-center">
+                <div className="w-36 h-36 rounded-full border-4 border-zinc-800 flex flex-col items-center justify-center relative bg-zinc-950/60 shadow-inner">
+                  <span className="text-4xl font-extrabold font-mono text-purple-400">
+                    {atsAnalysis ? atsAnalysis.atsScore : (profile?.resumeUrl ? '--' : '0')}
+                  </span>
+                  <span className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">ATS Score</span>
+                </div>
+                {profile?.resumeUrl ? (
+                  <span className="text-xs text-zinc-400 mt-3 flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5 text-purple-400" /> Resume uploaded
+                  </span>
+                ) : (
+                  <span className="text-xs text-red-400 mt-3">No resume uploaded.</span>
+                )}
+              </div>
+            </div>
+
+            {/* Analysis details */}
+            {atsAnalysis && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Strength & summary */}
+                <Card className="p-6 space-y-4">
+                  <h3 className="font-extrabold text-zinc-200 text-sm flex items-center gap-2 border-b border-zinc-850 pb-3">
+                    <AwardIcon className="w-4.5 h-4.5 text-purple-400" />
+                    Resume Strength Summary
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-zinc-400">Overall Rating:</span>
+                      <span className="font-bold text-zinc-200">{atsAnalysis.strengthRating || 4} / 5</span>
                     </div>
+                    <p className="text-xs text-zinc-400 leading-relaxed bg-zinc-950/40 p-4 rounded-xl border border-zinc-850/60">
+                      {atsAnalysis.summary}
+                    </p>
+                  </div>
+                </Card>
 
-                    {/* Horizontal pipeline stepper */}
-                    <div className="flex items-center gap-2 max-w-xs w-full justify-between px-2">
-                      {/* Step 1: Applied */}
-                      <div className="flex flex-col items-center">
-                        <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center text-[10px] text-emerald-400 font-bold">
-                          ✓
-                        </div>
-                        <span className="text-[10px] text-zinc-400 mt-1 font-semibold">Applied</span>
-                      </div>
-
-                      <div className="flex-1 h-0.5 bg-zinc-800 mx-2"></div>
-
-                      {/* Step 2: Shortlisted */}
-                      <div className="flex flex-col items-center">
-                        <div
-                          className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                            drive.applicationStatus === 'Shortlisted' || drive.applicationStatus === 'Selected'
-                              ? 'bg-emerald-500/20 border border-emerald-500 text-emerald-400'
-                              : 'bg-zinc-950 border border-zinc-800 text-zinc-600'
-                          }`}
-                        >
-                          {drive.applicationStatus === 'Shortlisted' || drive.applicationStatus === 'Selected' ? '✓' : '2'}
-                        </div>
-                        <span className="text-[10px] text-zinc-500 mt-1 font-semibold">Shortlist</span>
-                      </div>
-
-                      <div className="flex-1 h-0.5 bg-zinc-800 mx-2"></div>
-
-                      {/* Step 3: Selection */}
-                      <div className="flex flex-col items-center">
-                        <div
-                          className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                            drive.applicationStatus === 'Selected'
-                              ? 'bg-emerald-500/20 border border-emerald-500 text-emerald-400'
-                              : drive.applicationStatus === 'Rejected'
-                              ? 'bg-red-500/20 border border-red-500 text-red-400'
-                              : 'bg-zinc-950 border border-zinc-800 text-zinc-600'
-                          }`}
-                        >
-                          {drive.applicationStatus === 'Selected' ? '✓' : drive.applicationStatus === 'Rejected' ? '✗' : '3'}
-                        </div>
-                        <span className="text-[10px] text-zinc-500 mt-1 font-semibold">Result</span>
-                      </div>
-                    </div>
-
-                    {/* Status Badge */}
-                    <div>
-                      {drive.applicationStatus === 'Selected' ? (
-                        <Badge variant="success">Selected!</Badge>
-                      ) : drive.applicationStatus === 'Rejected' ? (
-                        <Badge variant="destructive">Rejected</Badge>
-                      ) : (
-                        <Badge variant="info">{drive.applicationStatus || 'Applied'}</Badge>
-                      )}
+                {/* Skill gap analysis */}
+                <Card className="p-6 space-y-4">
+                  <h3 className="font-extrabold text-zinc-200 text-sm flex items-center gap-2 border-b border-zinc-850 pb-3">
+                    <ShieldAlert className="w-4.5 h-4.5 text-purple-400" />
+                    Skill Gap Analysis
+                  </h3>
+                  <div className="space-y-2">
+                    <span className="text-xs text-zinc-400">Identified weak areas or missing tools:</span>
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {atsAnalysis.missingSkills?.map((skill: string, idx: number) => (
+                        <Badge key={idx} variant="destructive">{skill}</Badge>
+                      ))}
                     </div>
                   </div>
-                ))}
+                </Card>
+
+                {/* Grammar suggestions */}
+                <Card className="p-6 space-y-4">
+                  <h3 className="font-extrabold text-zinc-200 text-sm flex items-center gap-2 border-b border-zinc-850 pb-3">
+                    <CheckSquare className="w-4.5 h-4.5 text-purple-400" />
+                    Wording & Grammar Enhancements
+                  </h3>
+                  <ul className="space-y-2 text-xs text-zinc-400">
+                    {atsAnalysis.grammarSuggestions?.map((item: string, idx: number) => (
+                      <li key={idx} className="flex gap-2 items-start">
+                        <span className="text-purple-400 mt-0.5">•</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+
+                {/* Keywords to inject */}
+                <Card className="p-6 space-y-4">
+                  <h3 className="font-extrabold text-zinc-200 text-sm flex items-center gap-2 border-b border-zinc-850 pb-3">
+                    <Cpu className="w-4.5 h-4.5 text-purple-400" />
+                    Recommended Keywords to Inject
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {atsAnalysis.keywordSuggestions?.map((kw: string, idx: number) => (
+                      <Badge key={idx} variant="secondary">{kw}</Badge>
+                    ))}
+                  </div>
+                </Card>
               </div>
             )}
           </div>
+        )}
 
-          {/* Right 1/3: Schedule & Calendar Alerts */}
-          <div className="flex flex-col gap-6">
-            <div className="border-b border-zinc-850 pb-3">
-              <h2 className="text-lg font-bold text-zinc-200">Placement Events</h2>
-            </div>
+        {/* Tab 3: Roadmap & Eligibility */}
+        {activeTab === 'roadmap' && (
+          <div className="space-y-8 animate-in fade-in duration-200">
+            {/* Probability overview */}
+            {roadmapLoading || probabilityLoading ? (
+              <div className="h-48 flex items-center justify-center"><Skeleton className="h-full w-full rounded-3xl" /></div>
+            ) : (
+              <div className="bg-zinc-900/10 border border-zinc-850 p-6 md:p-8 rounded-3xl grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Score Dial */}
+                <div className="flex flex-col items-center justify-center border-r border-zinc-850/65 pr-4">
+                  <div className="w-32 h-32 rounded-full border-4 border-zinc-800 flex flex-col items-center justify-center bg-zinc-950/60">
+                    <span className="text-4xl font-extrabold font-mono text-purple-400">{probabilityData?.probabilityScore || 85}%</span>
+                    <span className="text-[10px] text-zinc-500 uppercase mt-1">Probability</span>
+                  </div>
+                  <span className="text-xs text-zinc-300 mt-3 font-semibold">Placement Probability Score</span>
+                </div>
 
-            <div className="bg-zinc-900/20 border border-zinc-850 p-6 rounded-3xl flex flex-col gap-4">
-              <div className="flex justify-between items-center text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-                <span>Calendar Event Log</span>
-                <span className="flex items-center gap-1 text-[10px] font-bold text-purple-400">
-                  <Clock className="w-3.5 h-3.5" /> 1 Scheduled
-                </span>
+                {/* Verdict Factors */}
+                <div className="md:col-span-2 space-y-4">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/15 text-purple-400 rounded-full text-xs font-bold">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    Eligibility Verdict
+                  </div>
+                  <h3 className="text-lg font-bold text-zinc-200">{probabilityData?.verdict}</h3>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    {probabilityData?.factors?.map((f: any, idx: number) => (
+                      <div key={idx} className="p-3 bg-zinc-950/40 border border-zinc-900 rounded-xl space-y-1">
+                        <div className="flex justify-between text-[11px] font-bold">
+                          <span className="text-zinc-400">{f.name}</span>
+                          <span className="text-purple-400">{f.score}/100</span>
+                        </div>
+                        <p className="text-[10px] text-zinc-500">{f.feedback}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Roadmap & Certifications */}
+            {roadmap && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Roadmap Steps */}
+                <Card className="p-6 space-y-6">
+                  <h3 className="font-extrabold text-zinc-200 text-sm flex items-center gap-2 border-b border-zinc-850 pb-3">
+                    <TrendingUp className="w-4.5 h-4.5 text-purple-400" />
+                    Roadmap to Eligibility & Success
+                  </h3>
+                  <div className="space-y-4">
+                    {roadmap.roadmapSteps?.map((step: any, idx: number) => (
+                      <div key={idx} className="flex gap-4 items-start">
+                        <div className="w-6 h-6 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 flex items-center justify-center text-[10px] font-bold shrink-0">{idx + 1}</div>
+                        <div>
+                          <h4 className="text-xs font-extrabold text-zinc-300">{step.phase}</h4>
+                          <p className="text-xs text-zinc-500 mt-1 leading-relaxed">{step.target}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                {/* Recommended Certifications */}
+                <Card className="p-6 space-y-6">
+                  <h3 className="font-extrabold text-zinc-200 text-sm flex items-center gap-2 border-b border-zinc-850 pb-3">
+                    <Award className="w-4.5 h-4.5 text-purple-400" />
+                    Recommended Certifications
+                  </h3>
+                  <div className="space-y-4">
+                    {roadmap.recommendedCertifications?.map((c: any, idx: number) => (
+                      <div key={idx} className="p-4 bg-zinc-950/40 border border-zinc-900 rounded-2xl flex justify-between items-center">
+                        <div>
+                          <h4 className="text-xs font-extrabold text-zinc-200">{c.name}</h4>
+                          <p className="text-[10px] text-zinc-500 mt-0.5">{c.provider} • Difficulty: {c.difficulty}</p>
+                        </div>
+                        <Badge variant="info" className="text-[9px]">{c.effortDays} Days</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 4: Mock Interview Prep */}
+        {activeTab === 'interview' && (
+          <div className="space-y-8 animate-in fade-in duration-200">
+            <div className="bg-zinc-900/10 border border-zinc-850 p-6 md:p-8 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="space-y-4 max-w-xl">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/15 text-purple-400 rounded-full text-xs font-bold">
+                  <Bot className="w-3.5 h-3.5" />
+                  Gemini Interview Assistant
+                </div>
+                <h2 className="text-2xl font-extrabold text-zinc-100 font-sans">Role-Specific Technical Questions</h2>
+                <p className="text-sm text-zinc-400 leading-relaxed">
+                  Generate mock coding & engineering questions matching your department and profile. Write your response, and click 'Submit Answer' to get grading feedback and advice.
+                </p>
+                <Button
+                  onClick={fetchInterviewQuestions}
+                  loading={interviewLoading}
+                  className="shadow-xl shadow-purple-600/10 cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" /> Re-Generate Questions
+                </Button>
               </div>
 
-              {upcomingInterviews.map((evt) => (
-                <div
-                  key={evt.id}
-                  className="bg-zinc-950/60 border border-zinc-850 p-4 rounded-2xl space-y-3 relative overflow-hidden"
-                >
-                  <div className="absolute top-0 bottom-0 left-0 w-1 bg-purple-500"></div>
-                  <div>
-                    <h4 className="text-xs font-bold text-zinc-400">{evt.company}</h4>
-                    <h3 className="text-sm font-extrabold text-zinc-200 mt-0.5">{evt.role}</h3>
-                  </div>
+              <div className="hidden md:block text-purple-500/20"><Bot className="w-32 h-32" /></div>
+            </div>
 
-                  <div className="space-y-1.5 text-xs text-zinc-400 border-t border-zinc-900 pt-3">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Event</span>
-                      <span className="text-zinc-300 font-medium">{evt.type}</span>
+            {/* Questions container */}
+            {interviewQuestions.length > 0 && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left 2/3: Active Question workspace */}
+                <div className="lg:col-span-2 space-y-6">
+                  <Card className="p-6 space-y-6">
+                    <div className="flex justify-between items-center border-b border-zinc-850 pb-3">
+                      <span className="text-xs text-zinc-400">Question {currentQuestionIndex + 1} of {interviewQuestions.length}</span>
+                      <Badge variant="warning">{interviewQuestions[currentQuestionIndex]?.difficulty}</Badge>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Date</span>
-                      <span className="text-zinc-300 font-semibold">{evt.date}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Time</span>
-                      <span className="text-zinc-300 font-mono text-[11px]">{evt.time}</span>
-                    </div>
+
+                    <h3 className="text-base font-bold text-zinc-200 leading-relaxed">
+                      {interviewQuestions[currentQuestionIndex]?.question}
+                    </h3>
+
+                    {/* Response box */}
+                    <form onSubmit={submitMockAnswer} className="space-y-4">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-zinc-400">Your Technical Response</label>
+                        <textarea
+                          placeholder="Type your detailed explanation or draft code structure here..."
+                          value={userAnswer}
+                          onChange={(e) => {
+                            setUserAnswer(e.target.value);
+                            setInterviewFeedback(null);
+                          }}
+                          rows={6}
+                          className="w-full p-4 bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:border-purple-500 text-zinc-200 text-xs placeholder-zinc-500"
+                        />
+                      </div>
+                      <div className="flex gap-3 justify-end">
+                        <Button
+                          type="submit"
+                          disabled={!userAnswer.trim() || feedbackLoading}
+                          loading={feedbackLoading}
+                          className="cursor-pointer"
+                        >
+                          Grade Answer
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setCurrentQuestionIndex((prev) => (prev + 1) % interviewQuestions.length);
+                            setUserAnswer('');
+                            setInterviewFeedback(null);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          Next Question
+                        </Button>
+                      </div>
+                    </form>
+
+                    {/* AI Feedback */}
+                    <AnimatePresence>
+                      {interviewFeedback && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="p-4 bg-purple-950/20 border border-purple-500/20 rounded-xl space-y-2"
+                        >
+                          <h4 className="text-xs font-bold text-purple-400 flex items-center gap-1.5">
+                            <Bot className="w-4 h-4" /> AI Evaluation Feedback
+                          </h4>
+                          <p className="text-xs text-zinc-300 leading-relaxed">{interviewFeedback}</p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </Card>
+                </div>
+
+                {/* Right 1/3: Questions list */}
+                <div className="space-y-6">
+                  <h3 className="text-sm font-bold text-zinc-300 border-b border-zinc-850 pb-3">Available Questions</h3>
+                  <div className="space-y-3">
+                    {interviewQuestions.map((q, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          setCurrentQuestionIndex(idx);
+                          setUserAnswer('');
+                          setInterviewFeedback(null);
+                        }}
+                        className={`w-full text-left p-3.5 rounded-xl border text-xs transition-colors flex justify-between items-center cursor-pointer ${
+                          currentQuestionIndex === idx
+                            ? 'bg-purple-500/10 border-purple-500 text-purple-300'
+                            : 'bg-zinc-950/60 border-zinc-900 text-zinc-400 hover:border-zinc-800 hover:text-zinc-200'
+                        }`}
+                      >
+                        <span className="truncate max-w-[200px]">{q.question}</span>
+                        <Badge variant="secondary" className="text-[9px]">{q.difficulty}</Badge>
+                      </button>
+                    ))}
                   </div>
                 </div>
-              ))}
+              </div>
+            )}
+          </div>
+        )}
 
-              {upcomingInterviews.length === 0 && (
-                <div className="text-center py-6">
-                  <Calendar className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
-                  <p className="text-xs text-zinc-500">No interviews scheduled yet.</p>
+        {/* Tab 5: Calendar & Alerts */}
+        {activeTab === 'notifications' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-200">
+            {/* Left 2/3: Calendar list & Offer Letters */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Calendar events */}
+              <div className="bg-zinc-900/10 border border-zinc-850 p-6 rounded-3xl space-y-6">
+                <h3 className="text-lg font-bold text-zinc-200 border-b border-zinc-850 pb-3 flex items-center gap-2">
+                  <CalendarIcon className="w-5 h-5 text-purple-400" />
+                  Upcoming Placement Calendar Events
+                </h3>
+
+                <div className="space-y-4">
+                  {calendarEvents.map(evt => (
+                    <div key={evt.id} className="p-4 bg-zinc-950/60 border border-zinc-900 rounded-2xl flex justify-between items-center">
+                      <div className="flex gap-4 items-center">
+                        <div className="w-12 h-12 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-xl flex flex-col items-center justify-center font-mono">
+                          <span className="text-[9px] font-bold uppercase">{evt.type.substring(0, 4)}</span>
+                          <span className="text-sm font-extrabold">{evt.date.split('-')[2]}</span>
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-zinc-200">{evt.title}</h4>
+                          <p className="text-[10px] text-zinc-500 mt-0.5">{evt.date} • {evt.time}</p>
+                        </div>
+                      </div>
+                      <Badge variant={evt.type === 'Interview' ? 'info' : 'secondary'}>{evt.type}</Badge>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
+
+              {/* Offer Letters */}
+              <div className="bg-zinc-900/10 border border-zinc-850 p-6 rounded-3xl space-y-6">
+                <h3 className="text-lg font-bold text-zinc-200 border-b border-zinc-850 pb-3 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-purple-400" />
+                  My Issued Offer Letters
+                </h3>
+
+                <div className="space-y-4">
+                  {offers.map(off => (
+                    <div key={off.id} className="p-4 bg-zinc-950/60 border border-zinc-900 rounded-2xl flex justify-between items-center">
+                      <div className="flex gap-3 items-center">
+                        <div className="w-10 h-10 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center">
+                          <Award className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-zinc-200">{off.company}</h4>
+                          <p className="text-[10px] text-zinc-500 mt-0.5">{off.role} • <strong>Package:</strong> {off.package}</p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" className="flex items-center gap-1 cursor-pointer">
+                        <Download className="w-3.5 h-3.5" /> Download PDF
+                      </Button>
+                    </div>
+                  ))}
+
+                  {offers.length === 0 && (
+                    <p className="text-xs text-zinc-500 text-center py-4">No offer letters issued yet.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right 1/3: Alerts & Notification log */}
+            <div className="bg-zinc-900/10 border border-zinc-850 p-6 rounded-3xl space-y-6">
+              <h3 className="text-lg font-bold text-zinc-200 border-b border-zinc-850 pb-3 flex items-center gap-2">
+                <Bell className="w-5 h-5 text-purple-400" />
+                Notification Stream
+              </h3>
+
+              <div className="space-y-4">
+                {notifications.map(notif => (
+                  <div key={notif.id} className="p-4 bg-zinc-950/60 border border-zinc-900 rounded-2xl space-y-2 relative overflow-hidden">
+                    {notif.unread && (
+                      <div className="absolute top-0 bottom-0 left-0 w-1 bg-purple-500"></div>
+                    )}
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-zinc-350 text-xs">{notif.title}</span>
+                      <span className="text-[9px] text-zinc-500">{notif.time}</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-400 leading-relaxed">{notif.msg}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </PageTransition>
   );
 };
+
 export default StudentDashboard;

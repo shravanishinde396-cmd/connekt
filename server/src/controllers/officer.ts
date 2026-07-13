@@ -4,6 +4,7 @@ import { Drive } from '../models/Drive.js';
 import { User } from '../models/User.js';
 import { StudentProfile } from '../models/StudentProfile.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
+import { createNotification, handleApplicantStatusChange, handleInterviewScheduling } from '../utils/notification.js';
 
 // ==========================================
 // COMPANY CRUD
@@ -177,6 +178,30 @@ export const createOfficerDrive = async (
     });
     await drive.save();
 
+    // Query eligible students and notify them
+    const queryCond: any = {
+      CGPA: { $gte: cgpaCutoff },
+      backlogs: { $lte: backlogCutoff },
+    };
+    if (allowedDepartments && allowedDepartments.length > 0) {
+      queryCond.department = { $in: allowedDepartments };
+    }
+    const eligibleStudents = await StudentProfile.find(queryCond);
+
+    const notificationPromises = eligibleStudents.map((student) => {
+      return createNotification(
+        student.userId.toString(),
+        `New Drive Published: ${company.name}`,
+        `A new placement drive has been published for ${role} role by ${company.name} offering ${packageLPA} LPA. Check eligibility and apply!`,
+        'drive_published',
+        req.user?.id,
+        drive._id.toString(),
+        'Drive',
+        req.io
+      );
+    });
+    Promise.all(notificationPromises).catch(err => console.error('Failed to dispatch bulk drive notifications:', err));
+
     res.status(201).json({ message: 'Placement drive created successfully', drive });
   } catch (error) {
     next(error);
@@ -258,6 +283,8 @@ export const getDriveApplicants = async (
         status: applicant.status,
         resumeUrl: applicant.resumeUrl,
         feedback: applicant.feedback,
+        interviewDate: applicant.interviewDate,
+        interviewTime: applicant.interviewTime,
         student: {
           _id: studentUser?._id || studentUser,
           name: studentUser?.name || 'Anonymous Student',
@@ -283,7 +310,7 @@ export const updateApplicantStatus = async (
 ): Promise<void> => {
   try {
     const { driveId, applicantId } = req.params;
-    const { status, feedback } = req.body;
+    const { status, feedback, interviewDate, interviewTime } = req.body;
 
     const drive = await Drive.findById(driveId);
     if (!drive) {
@@ -297,10 +324,33 @@ export const updateApplicantStatus = async (
       return;
     }
 
+    const oldStatus = applicant.status;
+
+    let scheduleUpdated = false;
+    if (interviewDate !== undefined && interviewDate !== applicant.interviewDate) {
+      applicant.interviewDate = interviewDate;
+      scheduleUpdated = true;
+    }
+    if (interviewTime !== undefined && interviewTime !== applicant.interviewTime) {
+      applicant.interviewTime = interviewTime;
+      scheduleUpdated = true;
+    }
+
     if (status) applicant.status = status;
     if (feedback !== undefined) applicant.feedback = feedback;
 
     await drive.save();
+
+    const senderId = req.user?.id || '';
+    const io = req.io;
+
+    if (status && status !== oldStatus) {
+      handleApplicantStatusChange(drive, applicant, oldStatus, status, senderId, io);
+    }
+
+    if (scheduleUpdated && interviewDate && interviewTime) {
+      handleInterviewScheduling(drive, applicant, interviewDate, interviewTime, senderId, io);
+    }
 
     res.json({ message: 'Applicant status updated successfully', applicant });
   } catch (error) {

@@ -3,6 +3,9 @@ import { Navigate, Outlet, Link, useLocation, useNavigate } from 'react-router-d
 import { useAuth } from '../contexts/AuthContext.js';
 import { useTheme } from '../contexts/ThemeContext.js';
 import { useToast } from '../contexts/ToastContext.js';
+import { useSocket } from '../contexts/SocketContext.js';
+import AIChatbox from '../components/AIChatbox.js';
+import { CommandPalette } from '../components/ui/CommandPalette.js';
 import {
   LayoutDashboard,
   User as UserIcon,
@@ -17,6 +20,10 @@ import {
   Menu,
   X,
   ChevronDown,
+  Trash2,
+  Calendar,
+  Award,
+  CheckCircle,
 } from 'lucide-react';
 
 interface SidebarItem {
@@ -29,19 +36,13 @@ export const DashboardLayout: React.FC = () => {
   const { user, loading, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useSocket();
   const location = useLocation();
   const navigate = useNavigate();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-
-  // Mock notifications for now (Phase 8 will bind with Socket.io)
-  const [notifications, setNotifications] = useState([
-    { id: '1', title: 'Interview Scheduled', message: 'Technical round with Google scheduled for July 12.', isRead: false },
-    { id: '2', title: 'Drive Published', message: 'Microsoft has published their software intern drive.', isRead: false },
-    { id: '3', title: 'Offer Issued', message: 'Congratulations! You have received an offer from Stripe.', isRead: true },
-  ]);
 
   if (loading) {
     return (
@@ -91,19 +92,13 @@ export const DashboardLayout: React.FC = () => {
       { label: 'Applicants', path: '/dashboard/recruiter/applicants', icon: <Users className="w-5 h-5" /> },
     ],
     admin: [
-      { label: 'System Overview', path: '/dashboard/admin', icon: <LayoutDashboard className="w-5 h-5" /> },
-      { label: 'User Accounts', path: '/dashboard/admin/users', icon: <Users className="w-5 h-5" /> },
-      { label: 'Audit Logs', path: '/dashboard/admin/logs', icon: <History className="w-5 h-5" /> },
+      { label: 'System Overview', path: '/dashboard/admin?tab=overview', icon: <LayoutDashboard className="w-5 h-5" /> },
+      { label: 'User Accounts', path: '/dashboard/admin?tab=users', icon: <Users className="w-5 h-5" /> },
+      { label: 'Audit Logs', path: '/dashboard/admin?tab=audit', icon: <History className="w-5 h-5" /> },
     ],
   };
 
   const currentRoleItems = sidebarItems[user.role] || [];
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
-
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    toast('All notifications marked as read', 'success');
-  };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans transition-colors duration-250">
@@ -146,7 +141,8 @@ export const DashboardLayout: React.FC = () => {
             {/* Links */}
             <nav className="space-y-1">
               {currentRoleItems.map((item) => {
-                const isActive = location.pathname === item.path;
+                const currentFullUrl = location.pathname + (location.search || '');
+                const isActive = currentFullUrl === item.path || (location.pathname === item.path && !location.search);
                 return (
                   <Link
                     key={item.path}
@@ -223,22 +219,78 @@ export const DashboardLayout: React.FC = () => {
               </button>
 
               {notificationsOpen && (
-                <div className="absolute right-0 top-12 z-40 w-80 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden p-2 animate-in fade-in slide-in-from-top-2">
+                <div className="absolute right-0 top-12 z-40 w-85 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden p-2 animate-in fade-in slide-in-from-top-2">
                   <div className="flex justify-between items-center p-3 border-b border-border/40">
-                    <span className="text-xs font-semibold text-foreground">Notifications</span>
+                    <span className="text-xs font-bold text-foreground">Notifications</span>
                     {unreadCount > 0 && (
-                      <button onClick={markAllAsRead} className="text-[10px] text-purple-400 hover:underline cursor-pointer">
+                      <button onClick={markAllAsRead} className="text-[10px] font-bold text-purple-400 hover:text-purple-300 hover:underline cursor-pointer">
                         Mark all read
                       </button>
                     )}
                   </div>
-                  <div className="max-h-60 overflow-y-auto divide-y divide-border/40">
-                    {notifications.map((n) => (
-                      <div key={n.id} className={`p-3 text-left ${n.isRead ? 'opacity-65' : 'bg-purple-955/5'}`}>
-                        <p className="text-xs font-semibold text-foreground">{n.title}</p>
-                        <p className="text-[10px] text-muted-foreground mt-1">{n.message}</p>
+                  <div className="max-h-72 overflow-y-auto divide-y divide-border/40">
+                    {notifications.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                        <Bell className="w-8 h-8 text-muted-foreground/40 mb-2 stroke-[1.5]" />
+                        <p className="text-xs font-semibold text-foreground/80">You're all caught up!</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">No notifications yet.</p>
                       </div>
-                    ))}
+                    ) : (
+                      notifications.map((n) => {
+                        let iconEl = <Bell className="w-3.5 h-3.5 text-zinc-400" />;
+                        let iconBg = 'bg-zinc-500/10 border-zinc-500/20';
+                        if (n.type === 'drive_published') {
+                          iconEl = <Briefcase className="w-3.5 h-3.5 text-purple-400" />;
+                          iconBg = 'bg-purple-500/10 border-purple-500/20';
+                        } else if (n.type === 'interview_scheduled') {
+                          iconEl = <Calendar className="w-3.5 h-3.5 text-sky-400" />;
+                          iconBg = 'bg-sky-500/10 border-sky-500/20';
+                        } else if (n.type === 'offer_issued') {
+                          iconEl = <Award className="w-3.5 h-3.5 text-amber-400" />;
+                          iconBg = 'bg-amber-500/10 border-amber-500/20';
+                        } else if (n.type === 'application_status') {
+                          iconEl = <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />;
+                          iconBg = 'bg-emerald-500/10 border-emerald-500/20';
+                        }
+
+                        return (
+                          <div
+                            key={n._id}
+                            onClick={() => !n.isRead && markAsRead(n._id)}
+                            className={`p-3 text-left flex items-start gap-3 hover:bg-muted/30 transition-all cursor-pointer group relative ${
+                              n.isRead ? 'opacity-65' : 'bg-purple-500/[0.03]'
+                            }`}
+                          >
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${iconBg}`}>
+                              {iconEl}
+                            </div>
+                            <div className="flex-grow min-w-0 pr-6">
+                              <p className="text-xs font-semibold text-foreground truncate group-hover:text-purple-400 transition-colors">
+                                {n.title}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed break-words">
+                                {n.message}
+                              </p>
+                              <span className="text-[8px] text-muted-foreground/60 font-mono mt-1 block">
+                                {new Date(n.createdAt).toLocaleDateString()} at {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            
+                            {/* Delete Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteNotification(n._id);
+                              }}
+                              className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 rounded transition-all cursor-pointer"
+                              title="Delete notification"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               )}
@@ -282,6 +334,12 @@ export const DashboardLayout: React.FC = () => {
         <main className="flex-grow p-6 md:p-8 max-w-7xl w-full mx-auto animate-in fade-in duration-300">
           <Outlet />
         </main>
+        
+        {/* Floating AI Chatbox */}
+        <AIChatbox />
+
+        {/* Global Keyboard Shortcut Command Palette */}
+        <CommandPalette />
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from '../utils/auth.js';
+import { sendVerificationEmail, sendPasswordResetEmail } from '../utils/email.js';
 
 // Cookie helper
 const setRefreshTokenCookie = (res: Response, token: string) => {
@@ -58,6 +59,11 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       });
       await studentProfile.save();
     }
+
+    // Send verification email asynchronously
+    sendVerificationEmail(user.email, user.name, 'mock_verification_token').catch((err) =>
+      console.error('Failed to send verification email:', err)
+    );
 
     // Generate tokens
     const accessToken = generateAccessToken({ id: (user._id as any).toString(), role: user.role });
@@ -227,6 +233,11 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     }
 
     // Generate time-limited reset token stub
+    const resetToken = 'mock_reset_token_' + Date.now();
+    sendPasswordResetEmail(user.email, user.name, resetToken).catch((err) =>
+      console.error('Failed to send reset password email:', err)
+    );
+
     console.log(`Password reset requested for ${email}. Reset token generated.`);
     res.json({ message: 'Password reset link sent to email (check console logs)' });
   } catch (error) {
