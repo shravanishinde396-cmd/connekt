@@ -1,7 +1,7 @@
-# PlacePilot — AI-Powered Placement Management Platform
+# Connekt — AI-Powered Placement Management Platform
 ## Master Implementation Plan
 
-This document outlines the step-by-step implementation plan for PlacePilot. We will build, run, and verify the app phase by phase.
+This document outlines the step-by-step implementation plan for Connekt. We will build, run, and verify the app phase by phase.
 
 ---
 
@@ -48,7 +48,7 @@ This document outlines the step-by-step implementation plan for PlacePilot. We w
   - [x] `AuthLayout` (centered card, nice backdrops)
   - [x] `DashboardLayout` (sidebar, responsive topbar, profile dropdown, notification bell, breadcrumbs)
   - [x] `PublicLayout` (landing page, clean header/footer)
-- [x] Implement beautiful Landing Page (marketing page for PlacePilot)
+- [x] Implement beautiful Landing Page (marketing page for Connekt)
 - [x] Configure React Router DOM v6 with public, protected, and role-guarded routes
 - [x] Verify Phase 2 (run client dev server, browse landing, register page, theme switch, responsive check)
 

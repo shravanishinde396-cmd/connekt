@@ -108,7 +108,7 @@ export const handleInterviewScheduling = async (
       round: 'Technical Interview',
       date,
       time,
-      mode: 'Online (PlacePilot Portal)'
+      mode: 'Online (Connekt Portal)'
     });
   } catch (error) {
     console.error('Failed to handle interview scheduling:', error);

@@ -63,7 +63,7 @@ export const uploadToCloudinaryOrLocal = async (localFilePath: string): Promise<
   if (isCloudinaryConfigured) {
     try {
       const result = await cloudinary.uploader.upload(localFilePath, {
-        folder: 'placepilot_resumes',
+        folder: 'connekt_resumes',
         resource_type: 'raw', // PDF needs raw or auto resource type in Cloudinary
       });
       // Delete local temp file after upload to Cloudinary

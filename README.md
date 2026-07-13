@@ -1,6 +1,6 @@
-# PlacePilot Career & Placement Platform
+# Connekt Career & Placement Platform
 
-PlacePilot is a premium, state-of-the-art university career and placement management portal built on the modern MERN stack. Designed with beautiful glassmorphic aesthetics, micro-animations, and responsive accessibility, the platform connects Students, Recruiter Companies, and Placement Officers under a unified real-time dashboard.
+Connekt is a premium, state-of-the-art university career and placement management portal built on the modern MERN stack. Designed with beautiful glassmorphic aesthetics, micro-animations, and responsive accessibility, the platform connects Students, Recruiter Companies, and Placement Officers under a unified real-time dashboard.
 
 ---
 
@@ -58,7 +58,7 @@ npm install
 Create a `.env` file in the `server` directory:
 ```env
 PORT=5000
-MONGODB_URI=mongodb://127.0.0.1:27017/placepilot
+MONGODB_URI=mongodb://127.0.0.1:27017/connekt
 JWT_SECRET=super_secret_key_for_jsonwebtoken
 FRONTEND_URL=http://localhost:5173
 
@@ -106,14 +106,14 @@ All seeded accounts share the default password: **`Password123`**
 
 | Role | Email Address | Description |
 | :--- | :--- | :--- |
-| **System Admin** | `admin@placepilot.com` | Manages system settings, users, and audits. |
-| **Placement Officer** | `officer@placepilot.com` | Publishes companies, coordinates drives, and views stats. |
-| **Placement Officer 2** | `officer2@placepilot.com` | Secondary officer account. |
-| **Recruiter (Google)** | `recruiter@placepilot.com` | Evaluates candidates, sets interview slots, and logs feedback. |
-| **Recruiter (Stripe)** | `recruiter2@placepilot.com` | Stripe hiring drives manager. |
-| **Recruiter (Microsoft)** | `recruiter3@placepilot.com` | Microsoft recruitment lead. |
-| **Demo Student** | `student@placepilot.com` | 8.5 CGPA, Computer Science, AWS Certified. |
-| **Other Students** | `student1@placepilot.com` to `student26@placepilot.com` | Varied departments, skills, and eligibility metrics. |
+| **System Admin** | `admin@connekt.com` | Manages system settings, users, and audits. |
+| **Placement Officer** | `officer@connekt.com` | Publishes companies, coordinates drives, and views stats. |
+| **Placement Officer 2** | `officer2@connekt.com` | Secondary officer account. |
+| **Recruiter (Google)** | `recruiter@connekt.com` | Evaluates candidates, sets interview slots, and logs feedback. |
+| **Recruiter (Stripe)** | `recruiter2@connekt.com` | Stripe hiring drives manager. |
+| **Recruiter (Microsoft)** | `recruiter3@connekt.com` | Microsoft recruitment lead. |
+| **Demo Student** | `student@connekt.com` | 8.5 CGPA, Computer Science, AWS Certified. |
+| **Other Students** | `student1@connekt.com` to `student26@connekt.com` | Varied departments, skills, and eligibility metrics. |
 
 ---
 

@@ -54,7 +54,7 @@ export const CommandPalette: React.FC = () => {
         { id: 's-dash', name: 'Go to Student Dashboard', category: 'Student Portal', path: '/dashboard/student', icon: <Compass className="w-4 h-4" /> },
         { id: 's-profile', name: 'Manage Resume & Profile', category: 'Student Portal', path: '/dashboard/student/profile', icon: <User className="w-4 h-4" /> },
         { id: 's-drives', name: 'Browse Placement Drives', category: 'Student Portal', path: '/dashboard/student/drives', icon: <Briefcase className="w-4 h-4" /> },
-        { id: 's-chat', name: 'Chat with PlacePilot AI Advisor', category: 'Features', action: 'toggle-ai-chat', icon: <Sparkles className="w-4 h-4 text-purple-400" /> }
+        { id: 's-chat', name: 'Chat with Connekt AI Advisor', category: 'Features', action: 'toggle-ai-chat', icon: <Sparkles className="w-4 h-4 text-purple-400" /> }
       ];
     }
 
@@ -100,7 +100,7 @@ export const CommandPalette: React.FC = () => {
       toast(`Navigating to ${item.name}`, 'info');
     } else if (item.action === 'toggle-ai-chat') {
       window.dispatchEvent(new CustomEvent('open-ai-chat'));
-      toast(`Opening PlacePilot AI Career Advisor`, 'success');
+      toast(`Opening Connekt AI Career Advisor`, 'success');
     }
     setIsOpen(false);
     setSearch('');

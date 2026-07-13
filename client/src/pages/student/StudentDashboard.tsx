@@ -465,7 +465,7 @@ export const StudentDashboard: React.FC = () => {
                 </div>
                 <h2 className="text-2xl font-extrabold text-zinc-100">Audit Your Resume Formatting & Skills</h2>
                 <p className="text-sm text-zinc-400 leading-relaxed">
-                  Upload your PDF resume on the profile page, then click the button below. PlacePilot AI will parse your skills, predict ATS compatibility, look for grammar optimizations, and list recommended keywords.
+                  Upload your PDF resume on the profile page, then click the button below. Connekt AI will parse your skills, predict ATS compatibility, look for grammar optimizations, and list recommended keywords.
                 </p>
                 <Button
                   onClick={runAtsAnalysis}

@@ -24,7 +24,7 @@ export const LandingPage: React.FC = () => {
         </h1>
 
         <p className="text-zinc-400 text-base sm:text-lg max-w-2xl mx-auto mt-6 leading-relaxed">
-          PlacePilot connects students, officers, and recruiters in a unified commercial-grade portal driven by Gemini AI matching, instant pipelines, and live tracking.
+          Connekt connects students, officers, and recruiters in a unified commercial-grade portal driven by Gemini AI matching, instant pipelines, and live tracking.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-10">
@@ -81,7 +81,7 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Engineered for Modern Institutions</h2>
-            <p className="text-zinc-400 mt-4">PlacePilot replaces legacy spreadsheets with a secure automated pipeline.</p>
+            <p className="text-zinc-400 mt-4">Connekt replaces legacy spreadsheets with a secure automated pipeline.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -125,7 +125,7 @@ export const LandingPage: React.FC = () => {
       <section className="w-full max-w-7xl px-6 py-24 z-10 text-center">
         <h2 className="text-2xl sm:text-3xl font-bold mb-6">Designed with Absolute Security</h2>
         <p className="text-zinc-500 text-sm max-w-md mx-auto mb-10 leading-relaxed">
-          PlacePilot integrates secure JWT rotation sessions, Helmet headers, request rate-limiting, and auditable action logs for complete enterprise safety.
+          Connekt integrates secure JWT rotation sessions, Helmet headers, request rate-limiting, and auditable action logs for complete enterprise safety.
         </p>
         <div className="flex flex-wrap justify-center gap-8 text-zinc-500 max-w-lg mx-auto">
           <div className="flex items-center gap-1.5 font-semibold text-xs"><CheckCircle2 className="w-4 h-4 text-purple-500" /> SECURE JWT</div>

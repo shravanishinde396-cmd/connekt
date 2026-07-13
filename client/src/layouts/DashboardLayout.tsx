@@ -48,7 +48,7 @@ export const DashboardLayout: React.FC = () => {
     return (
       <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center text-zinc-300">
         <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-sm font-medium animate-pulse">Loading PlacePilot Dashboard...</p>
+        <p className="text-sm font-medium animate-pulse">Loading Connekt Dashboard...</p>
       </div>
     );
   }
@@ -117,7 +117,7 @@ export const DashboardLayout: React.FC = () => {
                   P
                 </div>
                 <span className="font-semibold text-base tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                  PlacePilot
+                  Connekt
                 </span>
               </Link>
               <button onClick={() => setSidebarOpen(false)} className="md:hidden text-muted-foreground hover:text-foreground">
@@ -186,7 +186,7 @@ export const DashboardLayout: React.FC = () => {
             
             {/* Breadcrumb info */}
             <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground font-medium font-mono">
-              <span>PlacePilot</span>
+              <span>Connekt</span>
               <span>/</span>
               <span className="capitalize">{user.role.replace('_', ' ')}</span>
               <span>/</span>

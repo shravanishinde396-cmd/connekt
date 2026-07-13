@@ -1,7 +1,7 @@
 services:
   # Backend Express Service
   - type: web
-    name: placepilot-backend
+    name: connekt-backend
     env: node
     plan: free
     rootDir: server
@@ -19,11 +19,11 @@ services:
       - key: RESEND_API_KEY
         sync: false
       - key: FRONTEND_URL
-        value: https://placepilot-frontend.onrender.com
+        value: https://connekt-frontend.onrender.com
 
   # Frontend Vite Static Site
   - type: web
-    name: placepilot-frontend
+    name: connekt-frontend
     env: static
     plan: free
     rootDir: client
@@ -39,6 +39,6 @@ services:
         dest: /index.html
     envVars:
       - key: VITE_API_URL
-        value: https://placepilot-backend.onrender.com/api
+        value: https://connekt-backend.onrender.com/api
       - key: VITE_SOCKET_URL
-        value: https://placepilot-backend.onrender.com
+        value: https://connekt-backend.onrender.com

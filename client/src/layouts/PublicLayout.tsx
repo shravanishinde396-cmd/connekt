@@ -23,7 +23,7 @@ export const PublicLayout: React.FC = () => {
               P
             </div>
             <span className="font-semibold text-lg tracking-tight bg-gradient-to-r from-zinc-100 to-zinc-300 bg-clip-text text-transparent">
-              PlacePilot
+              Connekt
             </span>
           </Link>
 
@@ -147,14 +147,14 @@ export const PublicLayout: React.FC = () => {
             <div className="w-7 h-7 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
               P
             </div>
-            <span className="font-semibold text-zinc-300">PlacePilot</span>
+            <span className="font-semibold text-zinc-300">Connekt</span>
           </div>
           <div className="flex gap-6 text-xs">
             <a href="#" className="hover:underline">Privacy Policy</a>
             <a href="#" className="hover:underline">Terms of Service</a>
             <a href="#" className="hover:underline">Support</a>
           </div>
-          <p className="text-xs text-zinc-600">&copy; {new Date().getFullYear()} PlacePilot. Built for campus recruitment excellence.</p>
+          <p className="text-xs text-zinc-600">&copy; {new Date().getFullYear()} Connekt. Built for campus recruitment excellence.</p>
         </div>
       </footer>
     </div>

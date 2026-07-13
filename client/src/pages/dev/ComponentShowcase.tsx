@@ -58,7 +58,7 @@ export const ComponentShowcase: React.FC = () => {
           <Breadcrumbs items={breadcrumbsItems} />
           <h1 className="text-4xl font-extrabold font-sans tracking-tight text-zinc-100 mt-2 flex items-center gap-3">
             <Layers className="w-9 h-9 text-purple-500" />
-            PlacePilot Primitive Showcase
+            Connekt Primitive Showcase
           </h1>
           <p className="text-sm text-zinc-400 max-w-xl">
             Clean sandbox room testing all custom SaaS elements, states, Framer Motion, and design layouts. Press <kbd className="bg-zinc-950 px-1.5 py-0.5 rounded text-[10px] border border-zinc-800 text-zinc-400 font-mono">Ctrl+K</kbd> to open Command Palette.

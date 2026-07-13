@@ -26,7 +26,7 @@ export const AuthLayout: React.FC = () => {
             P
           </div>
           <span className="font-semibold text-lg tracking-tight bg-gradient-to-r from-zinc-100 to-zinc-300 bg-clip-text text-transparent">
-            PlacePilot
+            Connekt
           </span>
         </Link>
 
@@ -47,7 +47,7 @@ export const AuthLayout: React.FC = () => {
 
       {/* Footer */}
       <footer className="w-full text-center py-6 text-xs text-zinc-600 z-10 border-t border-zinc-900/50">
-        &copy; {new Date().getFullYear()} PlacePilot. All rights reserved. Secure commercial placement suite.
+        &copy; {new Date().getFullYear()} Connekt. All rights reserved. Secure commercial placement suite.
       </footer>
     </div>
   );

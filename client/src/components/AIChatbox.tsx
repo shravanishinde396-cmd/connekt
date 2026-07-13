@@ -18,7 +18,7 @@ export const AIChatbox: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: `Hi ${user?.name || 'there'}! I am PlacePilot AI, your campus placement assistant. Ask me anything about resume scores, interview prep, career eligibility, or general placement tips!`,
+      content: `Hi ${user?.name || 'there'}! I am Connekt AI, your campus placement assistant. Ask me anything about resume scores, interview prep, career eligibility, or general placement tips!`,
     },
   ]);
   const [inputValue, setInputValue] = useState('');
@@ -96,7 +96,7 @@ export const AIChatbox: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-xs font-bold text-zinc-100 flex items-center gap-1">
-                    PlacePilot AI Assistant
+                    Connekt AI Assistant
                     <Sparkles className="w-3 h-3 text-purple-400 animate-pulse" />
                   </h3>
                   <span className="text-[10px] text-zinc-400 font-mono">Status: Online</span>

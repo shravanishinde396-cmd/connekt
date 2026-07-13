@@ -139,7 +139,7 @@ export const OfficerDashboard: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'placepilot_placed_candidates.csv');
+      link.setAttribute('download', 'connekt_placed_candidates.csv');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

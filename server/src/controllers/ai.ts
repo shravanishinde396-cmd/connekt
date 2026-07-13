@@ -34,7 +34,7 @@ export const chatWithAI = async (
       try {
         const model = getGeminiModel(apiKey);
         if (model) {
-          const systemPrompt = `You are PlacePilot AI, a brilliant placement coordinator and career counselor at a university.
+          const systemPrompt = `You are Connekt AI, a brilliant placement coordinator and career counselor at a university.
           You assist students, placement officers, and recruiters.
           The current user is ${userName} who is logged in as a ${userRole}.
           Keep your response clear, engaging, and professional. Focus on helping them achieve high placement success.
@@ -51,7 +51,7 @@ export const chatWithAI = async (
     }
 
     // Mock Chatbot fallback responses based on queries
-    let reply = `Hello ${userName}! As your PlacePilot AI assistant, I am here to help you navigate campus placements. How can I assist you with your role as a ${userRole.replace('_', ' ')} today?`;
+    let reply = `Hello ${userName}! As your Connekt AI assistant, I am here to help you navigate campus placements. How can I assist you with your role as a ${userRole.replace('_', ' ')} today?`;
     const query = latestMessage.toLowerCase();
 
     if (query.includes('resume') || query.includes('ats')) {

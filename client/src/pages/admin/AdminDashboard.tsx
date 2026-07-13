@@ -229,7 +229,7 @@ export const AdminDashboard: React.FC = () => {
           <div>
             <h1 className="text-3xl font-extrabold text-zinc-100 tracking-tight flex items-center gap-2">
               <ShieldCheck className="w-8 h-8 text-purple-500" />
-              PlacePilot Admin Panel
+              Connekt Admin Panel
             </h1>
             <p className="text-sm text-zinc-400 mt-1">Configure global permissions, track server status, check database health, and view analytics.</p>
           </div>

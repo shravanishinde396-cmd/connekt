@@ -567,7 +567,7 @@ export const exportPlacedStudentsCSV = async (
     });
 
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=placepilot_placed_candidates.csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=connekt_placed_candidates.csv');
     res.status(200).send(csv);
   } catch (error) {
     next(error);

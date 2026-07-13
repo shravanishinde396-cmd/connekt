@@ -1,5 +1,5 @@
-# PlacePilot Parallel Service Launcher for Windows
-Write-Host "Initializing PlacePilot Development Services..." -ForegroundColor Magenta
+# Connekt Parallel Service Launcher for Windows
+Write-Host "Initializing Connekt Development Services..." -ForegroundColor Magenta
 
 if (-not (Test-Path "server/node_modules")) {
     Write-Host "Installing backend packages..." -ForegroundColor Yellow

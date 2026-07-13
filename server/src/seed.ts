@@ -10,7 +10,7 @@ import { hashPassword } from './utils/auth.js';
 
 dotenv.config();
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/placepilot';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/connekt';
 
 const seed = async () => {
   try {
@@ -34,7 +34,7 @@ const seed = async () => {
     console.log('Creating system admin...');
     const admin = new User({
       name: 'System Admin',
-      email: 'admin@placepilot.com',
+      email: 'admin@connekt.com',
       passwordHash: hashed,
       role: 'admin',
       isEmailVerified: true,
@@ -44,7 +44,7 @@ const seed = async () => {
     console.log('Creating placement officers...');
     const officer1 = new User({
       name: 'Officer Dave',
-      email: 'officer@placepilot.com',
+      email: 'officer@connekt.com',
       passwordHash: hashed,
       role: 'placement_officer',
       isEmailVerified: true,
@@ -53,7 +53,7 @@ const seed = async () => {
 
     const officer2 = new User({
       name: 'Officer Sarah',
-      email: 'officer2@placepilot.com',
+      email: 'officer2@connekt.com',
       passwordHash: hashed,
       role: 'placement_officer',
       isEmailVerified: true,
@@ -91,7 +91,7 @@ const seed = async () => {
     console.log('Creating recruiters...');
     const recruiter1 = new User({
       name: 'Recruiter Alice',
-      email: 'recruiter@placepilot.com',
+      email: 'recruiter@connekt.com',
       passwordHash: hashed,
       role: 'recruiter',
       companyId: google._id,
@@ -101,7 +101,7 @@ const seed = async () => {
 
     const recruiter2 = new User({
       name: 'Recruiter Bob',
-      email: 'recruiter2@placepilot.com',
+      email: 'recruiter2@connekt.com',
       passwordHash: hashed,
       role: 'recruiter',
       companyId: stripe._id,
@@ -111,7 +111,7 @@ const seed = async () => {
 
     const recruiter3 = new User({
       name: 'Recruiter Charlie',
-      email: 'recruiter3@placepilot.com',
+      email: 'recruiter3@connekt.com',
       passwordHash: hashed,
       role: 'recruiter',
       companyId: microsoft._id,
@@ -138,10 +138,10 @@ const seed = async () => {
       ['Go', 'Docker', 'AWS', 'Kubernetes', 'Linux', 'REST APIs', 'NoSQL']
     ];
 
-    // Seed student@placepilot.com as the primary demo student (John Smith)
+    // Seed student@connekt.com as the primary demo student (John Smith)
     const demoStudent = new User({
       name: 'Student John',
-      email: 'student@placepilot.com',
+      email: 'student@connekt.com',
       passwordHash: hashed,
       role: 'student',
       isEmailVerified: true,
@@ -197,7 +197,7 @@ const seed = async () => {
     // Seed 26 more students to hit 27 total students
     for (let i = 1; i <= 26; i++) {
       const name = `${firstNames[i % firstNames.length]} ${lastNames[i % lastNames.length]}`;
-      const email = `student${i}@placepilot.com`;
+      const email = `student${i}@connekt.com`;
       const dept = departments[i % departments.length];
       const cgpa = parseFloat((7.0 + (i % 3) * 0.9 + (i % 2) * 0.25).toFixed(2));
       const backlogs = i % 13 === 0 ? 1 : 0;

@@ -49,7 +49,7 @@ export const RegisterPage: React.FC = () => {
           Create Security Identity
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Get Started</h2>
-        <p className="text-sm text-zinc-400 mt-1.5">Configure your credentials to join PlacePilot</p>
+        <p className="text-sm text-zinc-400 mt-1.5">Configure your credentials to join Connekt</p>
       </div>
 
       {errorMsg && (
