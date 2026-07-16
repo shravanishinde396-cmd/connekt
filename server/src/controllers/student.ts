@@ -362,7 +362,38 @@ export const analyzeResume = async (
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
-    const fallbackAnalysis = {
+    let isFinanceResume = false;
+    if (profile.resumeUrl) {
+      try {
+        const localPath = path.join(process.cwd(), profile.resumeUrl.startsWith('/uploads/') ? profile.resumeUrl : '');
+        if (localPath && fs.existsSync(localPath)) {
+          const content = fs.readFileSync(localPath, 'utf8');
+          if (/finance|financial|accounting|portfolio|valuation|investment|business|bank/i.test(content)) {
+            isFinanceResume = true;
+          }
+        }
+      } catch (e) {
+        console.error('Error reading PDF file for mock detection:', e);
+      }
+    }
+
+    if (isFinanceResume) {
+      profile.department = 'Finance';
+      const defaultFinanceSkills = ['Corporate Finance', 'Valuation', 'Financial Analysis'];
+      const uniqueSkills = new Set([...profile.skills, ...defaultFinanceSkills]);
+      profile.skills = Array.from(uniqueSkills);
+    }
+
+    const financeFallbackAnalysis = {
+      atsScore: 82,
+      summary: "Detail-oriented finance student with a strong interest in corporate finance, investment banking, and financial analysis.",
+      missingSkills: ["Financial Modeling", "Excel VBA", "SQL", "Bloomberg Terminal"],
+      grammarSuggestions: ["Quantify achievements in previous internships.", "Refine the professional summary section."],
+      keywordSuggestions: ["Valuation", "DCF Analysis", "Financial Modeling", "Portfolio Management", "Equity Research"],
+      strengthRating: 4
+    };
+
+    const fallbackAnalysis = isFinanceResume ? financeFallbackAnalysis : {
       atsScore: 78,
       summary: "Aspiring software developer with strong foundational skills in programming and modern web technologies.",
       missingSkills: ["Docker", "Kubernetes", "AWS Solutions Architect", "System Design"],

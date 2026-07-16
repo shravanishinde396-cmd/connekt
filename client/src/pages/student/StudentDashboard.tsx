@@ -10,11 +10,12 @@ import { Skeleton } from '../../components/ui/Skeleton.js';
 import { NumberCounter } from '../../components/framer/NumberCounter.js';
 import { PageTransition } from '../../components/framer/MotionWrappers.js';
 import { motion, AnimatePresence } from 'framer-motion';
+import AIChatbox from '../../components/AIChatbox.js';
 import {
   Briefcase, Award, Calendar as CalendarIcon, CheckCircle, ArrowRight,
   TrendingUp, Sparkles, RefreshCw, Bot, FileText,
   CheckSquare, Bell, ShieldAlert, Cpu, AwardIcon,
-  MessageSquare, Download, X
+  MessageSquare, Download, X, Upload
 } from 'lucide-react';
 
 interface Company {
@@ -109,9 +110,51 @@ export const StudentDashboard: React.FC = () => {
     fetchDashboardData();
   }, []);
 
-  const runAtsAnalysis = async () => {
-    if (!profile?.resumeUrl) {
-      toast('Please upload your resume in Profile settings first!', 'info');
+  const [uploading, setUploading] = useState(false);
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+
+    if (file.type !== 'application/pdf') {
+      toast('Only PDF resumes are supported', 'error');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('resume', file);
+
+    setUploading(true);
+    try {
+      const res = await api.post('/student/resume', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      if (profile) {
+        setProfile({
+          ...profile,
+          resumeUrl: res.data.resumeUrl,
+          profileCompletion: res.data.profileCompletion,
+        });
+      }
+      toast('Resume uploaded successfully!', 'success');
+      
+      // Auto run ATS review if the user uploads from ATS tab
+      if (activeTab === 'ai-resume') {
+        runAtsAnalysis(res.data.resumeUrl);
+      }
+    } catch (err: any) {
+      toast(err.response?.data?.error || 'Failed to upload resume', 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const runAtsAnalysis = async (customResumeUrl?: string) => {
+    const resumeUrlToUse = customResumeUrl || profile?.resumeUrl;
+    if (!resumeUrlToUse) {
+      toast('Please upload your resume first!', 'info');
       return;
     }
     setAtsLoading(true);
@@ -309,6 +352,16 @@ export const StudentDashboard: React.FC = () => {
           >
             <Bell className="w-4 h-4" /> Calendar & Alerts
           </button>
+          <button
+            onClick={() => setActiveTab('ai-coach')}
+            className={`px-5 py-3 text-sm font-semibold transition-all border-b-2 rounded-t-xl flex items-center gap-2 cursor-pointer ${
+              activeTab === 'ai-coach'
+                ? 'border-purple-500 text-purple-400 bg-purple-500/5'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" /> AI Placement Coach
+          </button>
         </div>
 
         {/* Tab 1: Overview & Applications Timeline */}
@@ -465,15 +518,51 @@ export const StudentDashboard: React.FC = () => {
                 </div>
                 <h2 className="text-2xl font-extrabold text-zinc-100">Audit Your Resume Formatting & Skills</h2>
                 <p className="text-sm text-zinc-400 leading-relaxed">
-                  Upload your PDF resume on the profile page, then click the button below. Connekt AI will parse your skills, predict ATS compatibility, look for grammar optimizations, and list recommended keywords.
+                  Upload your PDF resume directly below, then click the check button. Connekt AI will parse your skills, predict ATS compatibility, look for grammar optimizations, and list recommended keywords.
                 </p>
-                <Button
-                  onClick={runAtsAnalysis}
-                  loading={atsLoading}
-                  className="shadow-xl shadow-purple-600/10 cursor-pointer"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" /> Run ATS Resume Check
-                </Button>
+                {!profile?.resumeUrl ? (
+                  <div className="flex flex-col gap-3">
+                    <p className="text-xs text-amber-400 flex items-center gap-1">
+                      <ShieldAlert className="w-4 h-4" /> Please upload your resume to start AI analysis
+                    </p>
+                    <label className="flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-zinc-100 font-bold rounded-xl text-xs transition-colors cursor-pointer max-w-xs shadow-lg shadow-purple-600/10">
+                      {uploading ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-zinc-100 border-t-transparent rounded-full animate-spin"></div>
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" /> Choose PDF Resume
+                        </>
+                      )}
+                      <input type="file" accept=".pdf" onChange={handleResumeUpload} className="hidden" />
+                    </label>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      onClick={() => runAtsAnalysis()}
+                      loading={atsLoading}
+                      className="shadow-xl shadow-purple-600/10 cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" /> Run ATS Resume Check
+                    </Button>
+                    <label className="flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-350 font-bold rounded-xl text-xs transition-colors cursor-pointer">
+                      {uploading ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-zinc-300 border-t-transparent rounded-full animate-spin"></div>
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" /> Re-upload PDF
+                        </>
+                      )}
+                      <input type="file" accept=".pdf" onChange={handleResumeUpload} className="hidden" />
+                    </label>
+                  </div>
+                )}
               </div>
 
               {/* Resume Score circular progress visualization */}
@@ -661,13 +750,56 @@ export const StudentDashboard: React.FC = () => {
                 <p className="text-sm text-zinc-400 leading-relaxed">
                   Generate mock coding & engineering questions matching your department and profile. Write your response, and click 'Submit Answer' to get grading feedback and advice.
                 </p>
-                <Button
-                  onClick={fetchInterviewQuestions}
-                  loading={interviewLoading}
-                  className="shadow-xl shadow-purple-600/10 cursor-pointer"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" /> Re-Generate Questions
-                </Button>
+
+                {!profile?.resumeUrl ? (
+                  <div className="flex flex-col gap-3">
+                    <p className="text-xs text-amber-400 flex items-center gap-1">
+                      <ShieldAlert className="w-4 h-4" /> For customized questions based on your background, upload your resume:
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      <label className="flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-zinc-100 font-bold rounded-xl text-xs transition-colors cursor-pointer max-w-xs shadow-lg shadow-purple-600/10">
+                        {uploading ? (
+                          <>
+                            <div className="w-3.5 h-3.5 border-2 border-zinc-100 border-t-transparent rounded-full animate-spin"></div>
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" /> Choose PDF Resume
+                          </>
+                        )}
+                        <input type="file" accept=".pdf" onChange={handleResumeUpload} className="hidden" />
+                      </label>
+                      <Button
+                        onClick={fetchInterviewQuestions}
+                        loading={interviewLoading}
+                        variant="outline"
+                        className="cursor-pointer"
+                      >
+                        <Sparkles className="w-4 h-4 mr-2" /> Generate Generic Questions
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-4">
+                    <Button
+                      onClick={fetchInterviewQuestions}
+                      loading={interviewLoading}
+                      className="shadow-xl shadow-purple-600/10 cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" /> Re-Generate Questions
+                    </Button>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-zinc-400 flex items-center gap-1">
+                        <FileText className="w-3.5 h-3.5 text-purple-400" /> Resume active
+                      </span>
+                      <label className="text-[11px] text-purple-400 hover:text-purple-300 font-semibold underline cursor-pointer">
+                        {uploading ? 'Uploading...' : 'Update Resume'}
+                        <input type="file" accept=".pdf" onChange={handleResumeUpload} className="hidden" />
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="hidden md:block text-purple-500/20"><Bot className="w-32 h-32" /></div>
@@ -859,6 +991,30 @@ export const StudentDashboard: React.FC = () => {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Tab 6: AI Placement Coach */}
+        {activeTab === 'ai-coach' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <div className="bg-zinc-900/10 border border-zinc-850 p-6 md:p-8 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="space-y-4 max-w-xl">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/15 text-purple-400 rounded-full text-xs font-bold">
+                  <Bot className="w-3.5 h-3.5 animate-pulse" />
+                  AI Placement Assistant
+                </div>
+                <h2 className="text-2xl font-extrabold text-zinc-100 font-sans">Chat with your Career & Placement Guide</h2>
+                <p className="text-sm text-zinc-400 leading-relaxed">
+                  Ask questions about placement drives, get recommendations for resume optimization, plan your preparation timeline, or get advice on solving technical interview questions.
+                </p>
+              </div>
+              <div className="hidden md:block text-purple-500/20">
+                <Bot className="w-32 h-32 stroke-[1.2]" />
+              </div>
+            </div>
+
+            {/* Embedded Chatbox */}
+            <AIChatbox inline={true} />
           </div>
         )}
       </div>

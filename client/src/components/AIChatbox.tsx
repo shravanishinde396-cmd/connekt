@@ -10,11 +10,15 @@ interface Message {
   content: string;
 }
 
-export const AIChatbox: React.FC = () => {
+interface AIChatboxProps {
+  inline?: boolean;
+}
+
+export const AIChatbox: React.FC<AIChatboxProps> = ({ inline = false }) => {
   const { user } = useAuth();
   const location = useLocation();
   
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(inline ? true : false);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -75,6 +79,98 @@ export const AIChatbox: React.FC = () => {
       setLoading(false);
     }
   };
+
+  if (inline) {
+    return (
+      <div className="w-full h-[540px] bg-zinc-900/10 border border-zinc-850 rounded-3xl shadow-xl flex flex-col overflow-hidden backdrop-blur-md">
+        {/* Header */}
+        <div className="px-6 py-5 bg-gradient-to-r from-purple-650/20 to-indigo-650/20 border-b border-zinc-850 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-purple-600 flex items-center justify-center text-white shadow-lg shadow-purple-600/20">
+              <Bot className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-zinc-100 flex items-center gap-1.5">
+                Connekt AI Placement Guide
+                <Sparkles className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
+              </h3>
+              <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span> Live Coaching Assistant
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Messages Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {messages.map((msg, index) => {
+            const isAI = msg.role === 'assistant';
+            return (
+              <div
+                key={index}
+                className={`flex gap-3 max-w-[80%] ${isAI ? 'mr-auto' : 'ml-auto flex-row-reverse'}`}
+              >
+                <div
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold ${
+                    isAI ? 'bg-purple-600/20 text-purple-400 border border-purple-500/20' : 'bg-zinc-800 text-zinc-300'
+                  }`}
+                >
+                  {isAI ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                </div>
+
+                <div
+                  className={`p-3.5 rounded-2xl text-xs leading-relaxed ${
+                    isAI
+                      ? 'bg-zinc-900 border border-zinc-850 text-zinc-200 rounded-tl-sm'
+                      : 'bg-purple-600 text-white rounded-tr-sm shadow-md shadow-purple-950/20'
+                  }`}
+                >
+                  {msg.content}
+                </div>
+              </div>
+            );
+          })}
+
+          {loading && (
+            <div className="flex gap-3 max-w-[80%] mr-auto">
+              <div className="w-7 h-7 rounded-lg bg-purple-600/20 text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0">
+                <Bot className="w-4 h-4" />
+              </div>
+              <div className="bg-zinc-900 border border-zinc-850 p-3.5 rounded-2xl rounded-tl-sm flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce"></span>
+                <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Footer */}
+        <form onSubmit={handleSendMessage} className="p-4 bg-zinc-900/20 border-t border-zinc-850 flex gap-2">
+          <input
+            type="text"
+            placeholder="Ask me about placements, resume score, mock interviews..."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-purple-500 text-zinc-100 placeholder-zinc-500"
+          />
+          <button
+            type="submit"
+            disabled={!inputValue.trim() || loading}
+            className="px-4 bg-purple-600 hover:bg-purple-700 disabled:bg-zinc-800 disabled:text-zinc-650 rounded-xl text-white shadow-lg transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+          >
+            Send <Send className="w-3.5 h-3.5" />
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  // Hide the floating widget on the student dashboard page since they have a dedicated tab
+  if (location.pathname === '/dashboard/student') {
+    return null;
+  }
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
