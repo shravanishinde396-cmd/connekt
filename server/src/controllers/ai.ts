@@ -70,6 +70,10 @@ export const chatWithAI = async (
       reply = `Database structures are crucial. Expect questions on JOIN operations, indexing performance, ACID transaction properties, normalization levels, and the trade-offs of relational databases vs NoSQL.`;
     } else if (query.includes('finance') || query.includes('valuation') || query.includes('dcf')) {
       reply = `For finance placement rounds, focus on financial modeling, Discounted Cash Flow (DCF) valuation, three-statement analysis (Income Statement, Balance Sheet, Cash Flow), WACC calculations, and corporate valuation multiples.`;
+    } else if (/\bwhat is c\b/i.test(query) || query.trim() === 'c' || query.includes('c++') || query.includes('cpp') || query.includes('pointer')) {
+      reply = `C is a powerful procedural programming language characterized by speed and low-level memory access. Key topics for placements include pointers, dynamic memory allocation (malloc/calloc), structures vs unions, storage classes, and differences between C and C++.`;
+    } else if (query.includes('oop') || query.includes('object oriented') || query.includes('polymorphism') || query.includes('inheritance')) {
+      reply = `Object-Oriented Programming (OOP) is a paradigm based on objects. The four core pillars are Encapsulation (data hiding), Inheritance (code reuse), Polymorphism (overloading/overriding), and Abstraction (simplifying interface).`;
     }
 
     res.json({ reply });
